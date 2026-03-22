@@ -24,6 +24,12 @@
 </head>
 <body>
 
+  <div id="update-banner" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+    <span>Update available</span>
+    <button onclick="applyUpdate()">Refresh</button>
+  </div>
+
   <div id="app">
     <div id="view-container"></div>
 
@@ -60,27 +66,51 @@
   <script src="src/views/reference.js"></script>
   <script>
     App.init();
+
+    let _swRegistration = null;
+
+    function showUpdateBanner() {
+      document.getElementById('update-banner').classList.add('visible');
+    }
+
+    function applyUpdate() {
+      if (_swRegistration?.waiting) {
+        _swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+
         navigator.serviceWorker.register('sw.js')
           .then(reg => {
-            // Re-check for a new SW whenever the app comes back into view
-            // (catches deploys after the app has been open in the background)
+            _swRegistration = reg;
+
+            // New SW already waiting when the page loaded (e.g. opened after a deploy)
+            if (reg.waiting) showUpdateBanner();
+
+            // New SW found while the page is open
+            reg.addEventListener('updatefound', () => {
+              reg.installing.addEventListener('statechange', function () {
+                if (this.state === 'installed' && navigator.serviceWorker.controller) {
+                  showUpdateBanner();
+                }
+              });
+            });
+
+            // Re-check for a new SW when the user brings the app back into focus
             document.addEventListener('visibilitychange', () => {
               if (document.visibilityState === 'visible') reg.update();
             });
           })
           .catch(() => {});
 
-        // When a new SW takes control (skipWaiting already called in sw.js),
-        // reload once so the page runs the latest assets from the new cache.
+        // When the new SW takes control, reload once to run fresh assets
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
-          }
+          if (!refreshing) { refreshing = true; window.location.reload(); }
         });
+
       });
     }
   </script>

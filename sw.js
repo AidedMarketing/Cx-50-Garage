@@ -18,9 +18,13 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  // Cache assets but do NOT skipWaiting — the client shows an update banner
+  // and only skips waiting when the user taps "Refresh", preventing mid-form reloads.
+  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+});
+
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
