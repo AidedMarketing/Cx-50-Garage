@@ -55,9 +55,42 @@ function maintenanceItem(e) {
     </div>
     <div class="list-item-right">
       <span class="cost">${App.formatCurrency(e.cost)}</span>
-      ${e.nextDueDate ? `<span class="text-muted">Next: ${App.formatDate(e.nextDueDate)}</span>` : ''}
+      ${e.nextDueDate || e.nextMileage ? `<span class="text-muted">Next: ${e.nextDueDate ? App.formatDate(e.nextDueDate) : ''}${e.nextDueDate && e.nextMileage ? ' · ' : ''}${e.nextMileage ? App.formatMileage(e.nextMileage) : ''}</span>` : ''}
     </div>
   </div>`;
+}
+
+const SERVICE_INTERVALS = {
+  'Oil & Filter Change':    { miles: 5000,   months: 6  },
+  'Tire Rotation':          { miles: 5000,   months: null },
+  'Brake Inspection':       { miles: null,   months: 12 },
+  'Brake Fluid':            { miles: 20000,  months: 24 },
+  'Cabin Air Filter':       { miles: 10000,  months: null },
+  'Engine Air Filter':      { miles: 15000,  months: null },
+  'Spark Plugs':            { miles: 30000,  months: null },
+  'Transmission Fluid':     { miles: 30000,  months: null },
+  'Coolant Flush':          { miles: 100000, months: null },
+  'Multi-Point Inspection': { miles: null,   months: 12 },
+  'Battery':                { miles: null,   months: 48 },
+};
+
+function calcMaintenanceNextDue() {
+  const type    = document.getElementById('m-type')?.value;
+  const dateStr = document.getElementById('m-date')?.value;
+  const mileage = parseInt(document.getElementById('m-mileage')?.value, 10);
+  const nextDateEl    = document.getElementById('m-next-date');
+  const nextMileageEl = document.getElementById('m-next-mileage');
+  if (!nextDateEl || !nextMileageEl) return;
+  const interval = SERVICE_INTERVALS[type];
+  if (!interval) return;
+  if (!nextDateEl.value && interval.months && dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setMonth(d.getMonth() + interval.months);
+    nextDateEl.value = d.toISOString().split('T')[0];
+  }
+  if (!nextMileageEl.value && interval.miles && !isNaN(mileage) && mileage > 0) {
+    nextMileageEl.value = mileage + interval.miles;
+  }
 }
 
 function openMaintenanceForm(existing) {
@@ -80,7 +113,7 @@ function openMaintenanceForm(existing) {
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">Service Type</label>
-        <select class="form-select" id="m-type">
+        <select class="form-select" id="m-type" onchange="calcMaintenanceNextDue()">
           ${SERVICE_TYPES.map(t => `<option value="${t}" ${e.type === t ? 'selected' : ''}>${t}</option>`).join('')}
         </select>
       </div>
@@ -91,7 +124,7 @@ function openMaintenanceForm(existing) {
         </div>
         <div class="form-group">
           <label class="form-label">Mileage</label>
-          <input type="number" class="form-input" id="m-mileage" placeholder="e.g. 12500" value="${e.mileage || ''}">
+          <input type="number" class="form-input" id="m-mileage" placeholder="e.g. 12500" value="${e.mileage || ''}" oninput="calcMaintenanceNextDue()">
         </div>
       </div>
       <div class="form-row">

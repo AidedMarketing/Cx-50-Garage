@@ -11,6 +11,7 @@ Views.dashboard = function () {
   // Stats
   const totalServiceCost = maintenance.reduce((s, m) => s + (Number(m.cost) || 0), 0);
   const modsInstalled = mods.filter(m => m.status === 'installed').length;
+  const modsActualSpend = mods.filter(m => m.status === 'installed').reduce((s, m) => s + (Number(m.actualCost) || 0), 0);
 
   // Next maintenance alert — show soonest upcoming
   const now = new Date();
@@ -22,7 +23,7 @@ Views.dashboard = function () {
   const upcomingAlert = upcoming ? `
     <div class="alert-banner ${isOverdue ? 'alert-red' : 'alert-amber'}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      <span>${isOverdue ? '<strong>Overdue:</strong>' : '<strong>Due:</strong>'} ${upcoming.type} — ${App.formatDate(upcoming.nextDueDate)}</span>
+      <span>${isOverdue ? '<strong>Overdue:</strong>' : '<strong>Due:</strong>'} ${upcoming.type} — ${App.formatDate(upcoming.nextDueDate)}${upcoming.nextMileage ? ` · ${App.formatMileage(upcoming.nextMileage)}` : ''}</span>
     </div>` : `
     <div class="alert-banner alert-green">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -89,8 +90,8 @@ Views.dashboard = function () {
             <div class="stat-label">Total service cost</div>
           </div>
           <div class="stat-card" onclick="App.navigate('mods')" style="cursor:pointer;">
-            <div class="stat-value">${modsInstalled} / ${mods.length}</div>
-            <div class="stat-label">Mods installed</div>
+            <div class="stat-value">${App.formatCurrency(modsActualSpend)}</div>
+            <div class="stat-label">Mods spend · ${modsInstalled}/${mods.length} installed</div>
           </div>
           <div class="stat-card" onclick="App.navigate('fuel')" style="cursor:pointer;">
             <div class="stat-value">${fuel.length}</div>
