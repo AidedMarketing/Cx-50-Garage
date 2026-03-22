@@ -185,9 +185,9 @@ function saveFuelEntry(existingId) {
 }
 
 function deleteFuelEntry(id) {
-  if (!confirm('Delete this fill-up?')) return;
-  App.saveFuel(App.getFuel().filter(x => x.id !== id));
-  App.closeModal();
-  App.toast('Entry deleted');
-  App.navigate('fuel');
+  App.confirm('Delete this fill-up?', () => {
+    App.saveFuel(App.getFuel().filter(x => x.id !== id));
+    App.toast('Entry deleted');
+    App.navigate('fuel');
+  });
 }

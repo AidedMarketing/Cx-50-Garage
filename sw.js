@@ -1,4 +1,5 @@
-const CACHE_NAME = 'cx50-garage-v1';
+// Bump CACHE_NAME on every deploy to force cache invalidation for installed PWA users
+const CACHE_NAME = 'cx50-garage-v2';
 const ASSETS = [
   '/Cx-50-Garage/',
   '/Cx-50-Garage/index.html',

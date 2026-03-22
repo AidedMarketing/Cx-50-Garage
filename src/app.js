@@ -194,6 +194,24 @@ const App = (() => {
     if (el) el.remove();
   }
 
+  function confirm(message, onConfirm) {
+    openModal(`
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title">Confirm</span>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:15px; color:var(--text-secondary); line-height:1.5; margin-bottom:20px;">${message}</p>
+        <button class="btn-destructive" style="margin-top:0;" onclick="(function(){ App.closeModal(); (${onConfirm.toString()})(); })()">Delete</button>
+        <button onclick="App.closeModal()" style="
+          width:100%; padding:14px; border:1px solid var(--border); border-radius:var(--radius-md);
+          font-size:15px; font-weight:500; color:var(--text-secondary); font-family:var(--font-ui);
+          background:var(--bg-card); margin-top:8px;
+        ">Cancel</button>
+      </div>
+    `);
+  }
+
   // ── Init ─────────────────────────────────────────────────────
   function init() {
     window._postRenderHooks = {};
@@ -209,7 +227,7 @@ const App = (() => {
     init, navigate, uid, toast, exportData,
     formatDate, formatCurrency, formatMileage,
     statusBadge, priorityBadge,
-    openModal, closeModal,
+    openModal, closeModal, confirm,
     getMaintenance, saveMaintenance,
     getMods, saveMods,
     getFuel, saveFuel,

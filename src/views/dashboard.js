@@ -20,7 +20,7 @@ Views.dashboard = function () {
   const isOverdue = upcoming && new Date(upcoming.nextDueDate) < now;
 
   const upcomingAlert = upcoming ? `
-    <div class="alert-banner ${isOverdue ? 'alert-amber' : 'alert-amber'}">
+    <div class="alert-banner ${isOverdue ? 'alert-red' : 'alert-amber'}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       <span>${isOverdue ? '<strong>Overdue:</strong>' : '<strong>Due:</strong>'} ${upcoming.type} — ${App.formatDate(upcoming.nextDueDate)}</span>
     </div>` : `
