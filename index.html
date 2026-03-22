@@ -62,7 +62,25 @@
     App.init();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => {
+            // Re-check for a new SW whenever the app comes back into view
+            // (catches deploys after the app has been open in the background)
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') reg.update();
+            });
+          })
+          .catch(() => {});
+
+        // When a new SW takes control (skipWaiting already called in sw.js),
+        // reload once so the page runs the latest assets from the new cache.
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
       });
     }
   </script>
