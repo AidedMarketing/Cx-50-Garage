@@ -116,6 +116,41 @@ const App = (() => {
     toast('Exported ' + filename);
   }
 
+  // ── Import ───────────────────────────────────────────────────
+  function importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        let parsed;
+        try {
+          parsed = JSON.parse(ev.target.result);
+        } catch {
+          toast('Could not read file — is it a valid JSON backup?');
+          return;
+        }
+        if (!parsed.maintenance && !parsed.mods && !parsed.fuel) {
+          toast('Invalid file — not a CX-50 Garage backup.');
+          return;
+        }
+        confirm('This will replace all current data with the backup. Continue?', () => {
+          if (parsed.maintenance) saveMaintenance(parsed.maintenance);
+          if (parsed.mods)        saveMods(parsed.mods);
+          if (parsed.fuel)        saveFuel(parsed.fuel);
+          if (parsed.vehicle)     saveVehicle(parsed.vehicle);
+          toast('Backup restored ✓');
+          navigate('dashboard');
+        });
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
   // ── Router ───────────────────────────────────────────────────
   let currentView = 'dashboard';
 
@@ -224,7 +259,7 @@ const App = (() => {
 
   // ── Public API ───────────────────────────────────────────────
   return {
-    init, navigate, uid, toast, exportData,
+    init, navigate, uid, toast, exportData, importData,
     formatDate, formatCurrency, formatMileage,
     statusBadge, priorityBadge,
     openModal, closeModal, confirm,

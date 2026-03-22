@@ -13,22 +13,62 @@ Views.dashboard = function () {
   const modsInstalled = mods.filter(m => m.status === 'installed').length;
   const modsActualSpend = mods.filter(m => m.status === 'installed').reduce((s, m) => s + (Number(m.actualCost) || 0), 0);
 
-  // Next maintenance alert — show soonest upcoming
-  const now = new Date();
-  const upcoming = maintenance
-    .filter(m => m.nextDueDate)
-    .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate))[0];
-  const isOverdue = upcoming && new Date(upcoming.nextDueDate) < now;
+  // Current odometer — prefer latest fuel entry, fall back to latest service entry
+  const latestFuel = [...fuel].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  const latestMaint = [...maintenance].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  const currentOdometer = latestFuel?.odometer
+    ? Number(latestFuel.odometer)
+    : (latestMaint?.mileage ? Number(latestMaint.mileage) : null);
 
-  const upcomingAlert = upcoming ? `
-    <div class="alert-banner ${isOverdue ? 'alert-red' : 'alert-amber'}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      <span>${isOverdue ? '<strong>Overdue:</strong>' : '<strong>Due:</strong>'} ${upcoming.type} — ${App.formatDate(upcoming.nextDueDate)}${upcoming.nextMileage ? ` · ${App.formatMileage(upcoming.nextMileage)}` : ''}</span>
-    </div>` : `
-    <div class="alert-banner alert-green">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      <span>No upcoming maintenance scheduled</span>
-    </div>`;
+  // Next maintenance alert — priority: overdue by mileage > overdue by date > near mileage > upcoming date
+  const now = new Date();
+  let alertEntry = null, alertKind = null;
+
+  if (currentOdometer) {
+    alertEntry = maintenance
+      .filter(m => m.nextMileage && Number(m.nextMileage) <= currentOdometer)
+      .sort((a, b) => Number(a.nextMileage) - Number(b.nextMileage))[0] || null;
+    if (alertEntry) alertKind = 'overdue-miles';
+  }
+
+  if (!alertEntry) {
+    alertEntry = maintenance
+      .filter(m => m.nextDueDate && new Date(m.nextDueDate) < now)
+      .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate))[0] || null;
+    if (alertEntry) alertKind = 'overdue-date';
+  }
+
+  if (!alertEntry && currentOdometer) {
+    alertEntry = maintenance
+      .filter(m => m.nextMileage && Number(m.nextMileage) > currentOdometer && Number(m.nextMileage) - currentOdometer <= 1000)
+      .sort((a, b) => Number(a.nextMileage) - Number(b.nextMileage))[0] || null;
+    if (alertEntry) alertKind = 'near-miles';
+  }
+
+  if (!alertEntry) {
+    alertEntry = maintenance
+      .filter(m => m.nextDueDate && new Date(m.nextDueDate) >= now)
+      .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate))[0] || null;
+    if (alertEntry) alertKind = 'upcoming-date';
+  }
+
+  const clockIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+  const checkIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+
+  let upcomingAlert;
+  if (!alertEntry) {
+    upcomingAlert = `<div class="alert-banner alert-green">${checkIcon}<span>No upcoming maintenance scheduled</span></div>`;
+  } else if (alertKind === 'overdue-miles') {
+    const milesOver = currentOdometer - Number(alertEntry.nextMileage);
+    upcomingAlert = `<div class="alert-banner alert-red">${clockIcon}<span><strong>Overdue by mileage:</strong> ${alertEntry.type} — was due at ${App.formatMileage(alertEntry.nextMileage)} (${App.formatMileage(milesOver)} over)</span></div>`;
+  } else if (alertKind === 'overdue-date') {
+    upcomingAlert = `<div class="alert-banner alert-red">${clockIcon}<span><strong>Overdue:</strong> ${alertEntry.type} — ${App.formatDate(alertEntry.nextDueDate)}${alertEntry.nextMileage ? ` · ${App.formatMileage(alertEntry.nextMileage)}` : ''}</span></div>`;
+  } else if (alertKind === 'near-miles') {
+    const milesLeft = Number(alertEntry.nextMileage) - currentOdometer;
+    upcomingAlert = `<div class="alert-banner alert-amber">${clockIcon}<span><strong>Due soon:</strong> ${alertEntry.type} — ${App.formatMileage(alertEntry.nextMileage)} (${App.formatMileage(milesLeft)} away)</span></div>`;
+  } else {
+    upcomingAlert = `<div class="alert-banner alert-amber">${clockIcon}<span><strong>Due:</strong> ${alertEntry.type} — ${App.formatDate(alertEntry.nextDueDate)}${alertEntry.nextMileage ? ` · ${App.formatMileage(alertEntry.nextMileage)}` : ''}</span></div>`;
+  }
 
   // Top priority mod
   const topMod = mods.find(m => m.priority === 'high' && m.status !== 'installed' && m.status !== 'skipped');
@@ -135,15 +175,23 @@ Views.dashboard = function () {
           </div>`).join('')}
       </div>` : ''}
 
-      <!-- Export Backup -->
-      <div style="padding: 8px 16px 24px;">
+      <!-- Export / Import Backup -->
+      <div style="padding: 8px 16px 24px; display:flex; gap:8px;">
         <button onclick="App.exportData('all')" style="
-          width:100%; padding:12px; border:1px solid var(--border); border-radius: var(--radius-md);
+          flex:1; padding:12px; border:1px solid var(--border); border-radius: var(--radius-md);
           font-size:13px; color: var(--text-tertiary); font-family: var(--font-ui);
-          background: var(--bg-card); display:flex; align-items:center; justify-content:center; gap:8px;
+          background: var(--bg-card); display:flex; align-items:center; justify-content:center; gap:6px;
         ">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export full backup (JSON)
+          Export backup
+        </button>
+        <button onclick="App.importData()" style="
+          flex:1; padding:12px; border:1px solid var(--border); border-radius: var(--radius-md);
+          font-size:13px; color: var(--text-tertiary); font-family: var(--font-ui);
+          background: var(--bg-card); display:flex; align-items:center; justify-content:center; gap:6px;
+        ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import backup
         </button>
       </div>
 
