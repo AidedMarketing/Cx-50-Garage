@@ -12,6 +12,20 @@ Views.dashboard = function () {
   const totalServiceCost = maintenance.reduce((s, m) => s + (Number(m.cost) || 0), 0);
   const modsInstalled = mods.filter(m => m.status === 'installed').length;
   const modsActualSpend = mods.filter(m => m.status === 'installed').reduce((s, m) => s + (Number(m.actualCost) || 0), 0);
+  const totalFuelSpend = fuel.reduce((s, e) => s + (Number(e.totalPrice) || 0), 0);
+
+  // Cost per mile — total all-in spend ÷ miles driven (from fuel odometer range)
+  const fuelChron = [...fuel].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const firstOdo = fuelChron[0]?.odometer ? Number(fuelChron[0].odometer) : null;
+  const lastOdo  = fuelChron[fuelChron.length - 1]?.odometer ? Number(fuelChron[fuelChron.length - 1].odometer) : null;
+  const totalMilesDriven = firstOdo && lastOdo && lastOdo > firstOdo ? lastOdo - firstOdo : null;
+  const allInSpend = totalServiceCost + totalFuelSpend + modsActualSpend;
+  const costPerMile = totalMilesDriven ? (allInSpend / totalMilesDriven).toFixed(2) : null;
+
+  // Miles since last oil change
+  const lastOilChange = [...maintenance]
+    .filter(m => m.type === 'Oil & Filter Change' && m.mileage)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
   // Current odometer — prefer latest fuel entry, fall back to latest service entry
   const latestFuel = [...fuel].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -54,6 +68,14 @@ Views.dashboard = function () {
 
   const clockIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
   const checkIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+
+  const milesSinceOil = currentOdometer && lastOilChange?.mileage
+    ? currentOdometer - Number(lastOilChange.mileage)
+    : null;
+  const oilInsight = milesSinceOil !== null && milesSinceOil >= 0 ? (() => {
+    const color = milesSinceOil > 5000 ? 'var(--accent)' : milesSinceOil > 4000 ? 'var(--amber)' : 'var(--text-tertiary)';
+    return `<div style="text-align:center; font-size:12px; color:${color}; margin-top:6px;">${App.formatMileage(milesSinceOil)} since last oil change</div>`;
+  })() : '';
 
   let upcomingAlert;
   if (!alertEntry) {
@@ -116,7 +138,7 @@ Views.dashboard = function () {
       </div>
 
       <!-- Alert -->
-      <div style="margin-top: 12px;">${upcomingAlert}</div>
+      <div style="margin-top: 12px;">${upcomingAlert}${oilInsight}</div>
 
       <!-- Stats Grid -->
       <div style="padding: 0 16px;">
@@ -134,8 +156,8 @@ Views.dashboard = function () {
             <div class="stat-label">Mods spend · ${modsInstalled}/${mods.length} installed</div>
           </div>
           <div class="stat-card" onclick="App.navigate('fuel')" style="cursor:pointer;">
-            <div class="stat-value">${fuel.length}</div>
-            <div class="stat-label">Fill-ups logged</div>
+            <div class="stat-value">${costPerMile ? '$' + costPerMile : '—'}</div>
+            <div class="stat-label">Cost / mile · ${fuel.length} fill-ups</div>
           </div>
         </div>
       </div>

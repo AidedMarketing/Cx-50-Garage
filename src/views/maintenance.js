@@ -2,9 +2,41 @@
 
 window.Views = window.Views || {};
 
+const MAINT_FILTERS = [
+  { key: 'all',        label: 'All' },
+  { key: 'oil',        label: 'Oil',       types: ['Oil & Filter Change'] },
+  { key: 'tires',      label: 'Tires',     types: ['Tire Rotation', 'Tire Replacement', 'Alignment'] },
+  { key: 'brakes',     label: 'Brakes',    types: ['Brake Inspection', 'Brake Fluid'] },
+  { key: 'fluids',     label: 'Fluids',    types: ['Transmission Fluid', 'Coolant Flush'] },
+  { key: 'filters',    label: 'Filters',   types: ['Cabin Air Filter', 'Engine Air Filter'] },
+  { key: 'other',      label: 'Other',     types: ['Spark Plugs', 'Multi-Point Inspection', 'Wiper Blades', 'Detail / Wash', 'Battery', 'Other'] },
+];
+
+function renderMaintenanceList(entries, filter) {
+  const def = MAINT_FILTERS.find(f => f.key === filter);
+  const filtered = filter === 'all' ? entries : entries.filter(e => def?.types?.includes(e.type));
+  if (filtered.length === 0) return `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      <p>No entries in this category.</p>
+    </div>`;
+  return filtered.map(e => maintenanceItem(e)).join('');
+}
+
 Views.maintenance = function () {
   const entries = [...App.getMaintenance()].sort((a, b) => new Date(b.date) - new Date(a.date));
   const totalCost = entries.reduce((s, e) => s + (Number(e.cost) || 0), 0);
+
+  window._postRenderHooks['maintenance'] = function () {
+    document.getElementById('maint-filter-bar')?.addEventListener('click', ev => {
+      const pill = ev.target.closest('.filter-pill');
+      if (!pill) return;
+      document.querySelectorAll('#maint-filter-bar .filter-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const all = [...App.getMaintenance()].sort((a, b) => new Date(b.date) - new Date(a.date));
+      document.getElementById('maint-list').innerHTML = renderMaintenanceList(all, pill.dataset.filter);
+    });
+  };
 
   return `
   <div class="view" id="view-maintenance">
@@ -26,15 +58,18 @@ Views.maintenance = function () {
       </div>
     </div>
 
-    <div style="padding: 8px 0;">
+    ${entries.length > 0 ? `
+    <div class="filter-bar" id="maint-filter-bar">
+      ${MAINT_FILTERS.map((f, i) => `<button class="filter-pill${i === 0 ? ' active' : ''}" data-filter="${f.key}">${f.label}</button>`).join('')}
+    </div>` : ''}
+
+    <div id="maint-list" style="padding: ${entries.length > 0 ? '8px' : '0'} 16px;">
       ${entries.length === 0 ? `
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
           <p>No service entries yet.<br>Tap + to log your first service.</p>
         </div>` :
-        `<div style="padding: 0 16px;">
-          ${entries.map(e => maintenanceItem(e)).join('')}
-        </div>`
+        renderMaintenanceList(entries, 'all')
       }
     </div>
 
@@ -51,6 +86,7 @@ function maintenanceItem(e) {
       <div class="list-item-title">${e.type}</div>
       <div class="list-item-meta">${App.formatDate(e.date)} · ${App.formatMileage(e.mileage)}</div>
       ${e.shop ? `<div class="list-item-meta" style="margin-top: 2px;">${e.shop}</div>` : ''}
+      ${e.partsUsed ? `<div class="list-item-meta" style="margin-top: 2px; font-size: 11px; color: var(--text-tertiary);">${e.partsUsed.length > 70 ? e.partsUsed.slice(0,70) + '…' : e.partsUsed}</div>` : ''}
       ${e.notes ? `<div class="list-item-meta" style="margin-top: 3px; font-size: 11px; color: var(--text-tertiary);">${e.notes.length > 60 ? e.notes.slice(0,60) + '…' : e.notes}</div>` : ''}
     </div>
     <div class="list-item-right">
@@ -153,8 +189,12 @@ function openMaintenanceForm(existing) {
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">Parts / Materials Used</label>
+        <input type="text" class="form-input" id="m-parts" placeholder="e.g. Mobil 1 0W-20, OEM filter MA-010-PH9-30B" value="${e.partsUsed || ''}">
+      </div>
+      <div class="form-group">
         <label class="form-label">Notes</label>
-        <textarea class="form-textarea" id="m-notes" placeholder="Parts used, observations, etc.">${e.notes || ''}</textarea>
+        <textarea class="form-textarea" id="m-notes" placeholder="Observations, warnings, etc.">${e.notes || ''}</textarea>
       </div>
       <button class="btn-primary" onclick="saveMaintenanceEntry('${e.id || ''}')">
         ${e.id ? 'Save Changes' : 'Add Entry'}
@@ -180,6 +220,7 @@ function saveMaintenanceEntry(existingId) {
     shop:         document.getElementById('m-shop').value,
     nextDueDate:  document.getElementById('m-next-date').value,
     nextMileage:  document.getElementById('m-next-mileage').value,
+    partsUsed:    document.getElementById('m-parts').value.trim(),
     notes:        document.getElementById('m-notes').value,
   };
 

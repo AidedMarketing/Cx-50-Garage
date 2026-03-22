@@ -8,6 +8,9 @@ Views.mods = function () {
   const totalEstimated = mods
     .filter(m => m.status !== 'installed' && m.status !== 'skipped')
     .reduce((s, m) => s + (Number(m.estimatedCost) || 0), 0);
+  const totalActualSpend = mods
+    .filter(m => m.status === 'installed')
+    .reduce((s, m) => s + (Number(m.actualCost) || 0), 0);
 
   // Register post-render hook for filter pills (replaces global postRender)
   window._postRenderHooks['mods'] = function () {
@@ -26,7 +29,7 @@ Views.mods = function () {
       <div style="display:flex; justify-content:space-between; align-items:flex-end;">
         <div>
           <h1>Mods &amp; Upgrades</h1>
-          <div class="subtitle">${installed} installed · ${App.formatCurrency(totalEstimated)} pipeline</div>
+          <div class="subtitle">${installed} installed · ${App.formatCurrency(totalActualSpend)} spent · ${App.formatCurrency(totalEstimated)} pipeline</div>
         </div>
         <button onclick="App.exportData('mods')" style="
           padding:7px 12px; border:1px solid var(--border); border-radius: var(--radius-sm);
@@ -82,7 +85,13 @@ function renderModsList(mods, filter) {
       <div class="list-item-right">
         ${App.statusBadge(m.status)}
         ${App.priorityBadge(m.priority)}
-        <span class="cost" style="font-size:13px;">${App.formatCurrency(m.estimatedCost)}</span>
+        ${m.status === 'installed' && m.actualCost != null ? (() => {
+          const variance = (m.estimatedCost != null) ? m.estimatedCost - m.actualCost : null;
+          const varHtml = variance !== null && variance !== 0
+            ? `<span style="font-size:10px; color:${variance > 0 ? 'var(--green)' : 'var(--accent)'};">${variance > 0 ? 'saved ' : 'over '}${App.formatCurrency(Math.abs(variance))}</span>`
+            : '';
+          return `<span class="cost" style="font-size:13px;">${App.formatCurrency(m.actualCost)}</span>${varHtml}`;
+        })() : `<span class="cost" style="font-size:13px; color:var(--text-tertiary);">${App.formatCurrency(m.estimatedCost)}</span>`}
       </div>
     </div>`).join('');
 }
