@@ -1,71 +1,49 @@
-# CX-50 Garage PWA
+# CX-50 Garage
 
 Personal owner companion for the **2023 Mazda CX-50 Turbo — Meridian Edition**.
+Deployed as a PWA to GitHub Pages — installable on iPhone via Safari → Add to Home Screen.
+
+**Live app:** `https://aidedmarketing.github.io/Cx-50-Garage/`
+
+---
 
 ## Features
 
-- **Dashboard** — Vehicle overview, next maintenance alert, top priority mod, stats
-- **Service Log** — Full maintenance history with dates, mileage, cost, shop vs DIY
-- **Mods & Upgrades Tracker** — Pre-seeded with 8 researched mods, filterable by status/priority
-- **Fuel Log** — Fill-up tracker with automatic MPG calculation
-- **Owner's Guide** — Searchable accordion with quick specs, hidden tricks, Miami tips, maintenance schedule, and tuning status
+- **Dashboard** — Vehicle overview, next maintenance alert (overdue in red), top priority mod, quick stats
+- **Service Log** — Full maintenance history with date, mileage, cost, shop vs DIY, and next-due tracking
+- **Mods & Upgrades** — Pre-seeded with 8 researched mods; filterable by status and priority
+- **Fuel Log** — Fill-up tracker with automatic MPG and per-gallon cost calculations
+- **Owner's Guide** — Searchable accordion covering quick specs, hidden tricks, Miami owner tips, maintenance schedule, and tuning/platform status
 
-All data is stored locally in the browser (localStorage). Fully offline-capable after first load.
-
----
-
-## Deploy to GitHub Pages
-
-### 1. Create a new GitHub repository
-
-Name it `cx50-garage` (or anything you like — just update `manifest.json` and `sw.js` with the correct path).
-
-### 2. Push the files
-
-```bash
-git init
-git add .
-git commit -m "Initial commit — CX-50 Garage PWA"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/cx50-garage.git
-git push -u origin main
-```
-
-### 3. Enable GitHub Pages
-
-1. Go to your repo → **Settings** → **Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main` / `/ (root)`
-4. Save — your app will be live at `https://YOUR_USERNAME.github.io/cx50-garage/`
-
-### 4. Install on iPhone
-
-1. Open the URL in **Safari** (must be Safari for PWA install)
-2. Tap the **Share** button (box with arrow)
-3. Tap **Add to Home Screen**
-4. Tap **Add** — the app appears on your home screen like a native app
+All data lives in `localStorage`. No account, no server, no build step. Fully offline after first load.
 
 ---
 
-## Customizing for a Different GitHub Username / Repo Name
+## Architecture
 
-If your repo name is not `cx50-garage`, update these two files:
+Vanilla JS PWA — no framework, no build toolchain.
 
-**`manifest.json`** — change `start_url` and `scope`:
-```json
-"start_url": "/YOUR_REPO_NAME/",
-"scope": "/YOUR_REPO_NAME/"
-```
+| File | Role |
+|---|---|
+| `index.html` | App shell, nav, script load order |
+| `src/app.js` | Central `App` module — state, routing, utilities, modal system |
+| `src/views/*.js` | View renderers attached to `window.Views` |
+| `src/data/reference.js` | Static `ReferenceData` object for the Owner's Guide |
+| `src/styles/main.css` | All styles — design tokens, components, layout |
+| `sw.js` | Service worker — cache-first strategy |
+| `manifest.json` | PWA manifest |
 
-**`sw.js`** — update all asset paths to use `/YOUR_REPO_NAME/` prefix.
+**Patterns:**
+- Views render via `container.innerHTML = Views.<name>()` — no virtual DOM
+- Post-render logic registered via `window._postRenderHooks[viewName]()`
+- All data accessed through `App.get*/save*()` which wrap `localStorage`
 
 ---
 
 ## Local Development
 
-Just open `index.html` in a browser. No build step required — the app is vanilla JS.
+No build step. Open `index.html` directly, or serve with any static server for service worker testing:
 
-For service worker testing, serve with any static server:
 ```bash
 npx serve .
 # or
@@ -74,12 +52,26 @@ python3 -m http.server 8080
 
 ---
 
+## Deploying
+
+Deploys automatically via GitHub Pages from `main`. After any deploy that changes JS or CSS, **bump `CACHE_NAME`** in `sw.js` to force cache invalidation for installed PWA users:
+
+```js
+// sw.js — increment version on every deploy
+const CACHE_NAME = 'cx50-garage-v2';
+```
+
+---
+
 ## Data
 
-All data lives in `localStorage` under these keys:
-- `cx50_maintenance` — service log entries
-- `cx50_mods` — mods tracker (pre-seeded with 8 items on first launch)
-- `cx50_fuel` — fuel log entries
-- `cx50_vehicle` — vehicle info overrides
+All data stored in `localStorage` under these keys:
 
-To reset all data: open browser DevTools → Application → Local Storage → clear all `cx50_*` keys.
+| Key | Contents |
+|---|---|
+| `cx50_maintenance` | Service log entries |
+| `cx50_mods` | Mods tracker (pre-seeded on first launch) |
+| `cx50_fuel` | Fuel fill-up entries |
+| `cx50_vehicle` | Vehicle info overrides |
+
+To reset: DevTools → Application → Local Storage → clear all `cx50_*` keys.
