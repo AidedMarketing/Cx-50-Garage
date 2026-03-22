@@ -1,0 +1,26 @@
+{
+  "name": "CX-50 Garage",
+  "short_name": "CX-50 Garage",
+  "description": "2023 Mazda CX-50 Turbo — Meridian Edition owner companion",
+  "start_url": "/Cx-50-Garage/",
+  "scope": "/Cx-50-Garage/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8F7F4",
+  "theme_color": "#F8F7F4",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "lifestyle"]
+}
