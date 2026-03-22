@@ -180,8 +180,8 @@ function saveModEntry(existingId) {
     status:        document.getElementById('mod-status').value,
     priority:      document.getElementById('mod-priority').value,
     category:      document.getElementById('mod-category').value,
-    estimatedCost: document.getElementById('mod-est-cost').value,
-    actualCost:    document.getElementById('mod-actual-cost').value,
+    estimatedCost: document.getElementById('mod-est-cost').value !== '' ? Number(document.getElementById('mod-est-cost').value) : null,
+    actualCost:    document.getElementById('mod-actual-cost').value !== '' ? Number(document.getElementById('mod-actual-cost').value) : null,
     brand:         document.getElementById('mod-brand').value.trim(),
     installType:   document.getElementById('mod-install').value,
     dateInstalled: document.getElementById('mod-date').value,
@@ -204,9 +204,9 @@ function saveModEntry(existingId) {
 }
 
 function deleteModEntry(id) {
-  if (!confirm('Delete this mod?')) return;
-  App.saveMods(App.getMods().filter(x => x.id !== id));
-  App.closeModal();
-  App.toast('Mod deleted');
-  App.navigate('mods');
+  App.confirm('Delete this mod?', () => {
+    App.saveMods(App.getMods().filter(x => x.id !== id));
+    App.toast('Mod deleted');
+    App.navigate('mods');
+  });
 }

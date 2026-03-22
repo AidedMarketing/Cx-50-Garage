@@ -166,9 +166,9 @@ function saveMaintenanceEntry(existingId) {
 }
 
 function deleteMaintenanceEntry(id) {
-  if (!confirm('Delete this service entry?')) return;
-  App.saveMaintenance(App.getMaintenance().filter(x => x.id !== id));
-  App.closeModal();
-  App.toast('Entry deleted');
-  App.navigate('maintenance');
+  App.confirm('Delete this service entry?', () => {
+    App.saveMaintenance(App.getMaintenance().filter(x => x.id !== id));
+    App.toast('Entry deleted');
+    App.navigate('maintenance');
+  });
 }
