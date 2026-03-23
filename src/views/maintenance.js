@@ -30,18 +30,18 @@ function renderMaintenanceTimeline(entries) {
     return 'var(--text-tertiary)';
   };
 
-  return `<div style="padding: 4px 0 8px;">` +
+  return `<div style="padding: 8px 0 8px;">` +
     entries.map((e, i) => `
-      <div style="display:flex; gap:14px; padding-bottom:0;">
-        <div style="display:flex; flex-direction:column; align-items:center; width:14px; flex-shrink:0; padding-top:4px;">
-          <div style="width:10px;height:10px;border-radius:50%;background:${dotColor(e.type)};flex-shrink:0;"></div>
-          ${i < entries.length - 1 ? `<div style="width:1.5px;flex:1;background:var(--border-light);margin-top:3px;min-height:20px;"></div>` : ''}
+      <div style="display:flex; gap:14px;">
+        <div style="display:flex; flex-direction:column; align-items:center; width:16px; flex-shrink:0; padding-top:3px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:${dotColor(e.type)};flex-shrink:0;box-shadow:0 0 0 3px var(--bg-card),0 0 0 4px ${dotColor(e.type)}22;"></div>
+          ${i < entries.length - 1 ? `<div style="width:1.5px;flex:1;background:var(--border);margin-top:4px;min-height:24px;"></div>` : ''}
         </div>
-        <div style="flex:1;padding-bottom:${i < entries.length - 1 ? '14px' : '4px'};cursor:pointer;" onclick="openMaintenanceDetail('${e.id}')">
-          <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">${e.type || 'Service'}</div>
+        <div style="flex:1;padding-bottom:${i < entries.length - 1 ? '16px' : '4px'};cursor:pointer;min-width:0;" onclick="openMaintenanceDetail('${e.id}')">
+          <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:2px;line-height:1.3;">${e.type || 'Service'}</div>
           <div style="font-size:12px;color:var(--text-secondary);">${App.formatDate(e.date)}${e.mileage ? ' · ' + App.formatMileage(e.mileage) : ''}</div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;">${[e.shop, e.cost ? App.formatCurrency(e.cost) : ''].filter(Boolean).join(' · ')}</div>
-          ${e.partsUsed ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;font-style:italic;">${e.partsUsed.length > 65 ? e.partsUsed.slice(0, 65) + '…' : e.partsUsed}</div>` : ''}
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;">${[e.shop, e.cost ? App.formatCurrency(e.cost) : ''].filter(Boolean).join(' · ')}</div>
+          ${e.partsUsed ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:2px;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.partsUsed}</div>` : ''}
         </div>
       </div>`
     ).join('') + `</div>`;
@@ -81,6 +81,9 @@ Views.maintenance = function () {
       document.querySelectorAll('#maint-view-toggles [data-mode]').forEach(b => {
         b.classList.toggle('view-toggle-active', b.dataset.mode === _maintViewMode);
       });
+      // Filter bar only applies in list mode — hide in timeline
+      const filterBar = document.getElementById('maint-filter-bar');
+      if (filterBar) filterBar.style.display = _maintViewMode === 'timeline' ? 'none' : '';
       const all = [...App.getMaintenance()].sort((a, b) => new Date(b.date) - new Date(a.date));
       const activePill = document.querySelector('#maint-filter-bar .filter-pill.active');
       const filter = activePill?.dataset.filter || 'all';

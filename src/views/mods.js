@@ -61,6 +61,17 @@ Views.mods = function () {
   </div>`;
 };
 
+function modCostDisplay(m) {
+  if (m.status === 'installed' && m.actualCost != null) {
+    const variance = m.estimatedCost != null ? m.estimatedCost - m.actualCost : null;
+    const varBadge = variance && variance !== 0
+      ? `<span style="font-size:10px;color:${variance > 0 ? 'var(--green)' : 'var(--accent)'};">${variance > 0 ? 'saved ' : 'over '}${App.formatCurrency(Math.abs(variance))}</span>`
+      : '';
+    return `<span class="cost" style="font-size:13px;">${App.formatCurrency(m.actualCost)}</span>${varBadge}`;
+  }
+  return `<span class="cost" style="font-size:13px;color:var(--text-tertiary);">${App.formatCurrency(m.estimatedCost)}</span>`;
+}
+
 function renderModsList(mods, filter) {
   const filtered = filter === 'all' ? mods : mods.filter(m => m.status === filter);
   const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -85,13 +96,7 @@ function renderModsList(mods, filter) {
       <div class="list-item-right">
         ${App.statusBadge(m.status)}
         ${App.priorityBadge(m.priority)}
-        ${m.status === 'installed' && m.actualCost != null ? (() => {
-          const variance = (m.estimatedCost != null) ? m.estimatedCost - m.actualCost : null;
-          const varHtml = variance !== null && variance !== 0
-            ? `<span style="font-size:10px; color:${variance > 0 ? 'var(--green)' : 'var(--accent)'};">${variance > 0 ? 'saved ' : 'over '}${App.formatCurrency(Math.abs(variance))}</span>`
-            : '';
-          return `<span class="cost" style="font-size:13px;">${App.formatCurrency(m.actualCost)}</span>${varHtml}`;
-        })() : `<span class="cost" style="font-size:13px; color:var(--text-tertiary);">${App.formatCurrency(m.estimatedCost)}</span>`}
+        ${modCostDisplay(m)}
       </div>
     </div>`).join('');
 }
