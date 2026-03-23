@@ -38,6 +38,7 @@ const App = (() => {
     mods:        'cx50_mods',
     fuel:        'cx50_fuel',
     vehicle:     'cx50_vehicle',
+    settings:    'cx50_settings',
   };
 
   const DEFAULT_VEHICLE = {
@@ -84,11 +85,36 @@ const App = (() => {
   function getMods()        { return store.get(KEYS.mods)        || DEFAULT_MODS; }
   function getFuel()        { return store.get(KEYS.fuel)        || []; }
   function getVehicle()     { return { ...DEFAULT_VEHICLE, ...(store.get(KEYS.vehicle) || {}) }; }
+  function getSettings()    { return store.get(KEYS.settings)    || {}; }
 
   function saveMaintenance(data) { store.set(KEYS.maintenance, data); }
   function saveMods(data)        { store.set(KEYS.mods, data); }
   function saveFuel(data)        { store.set(KEYS.fuel, data); }
   function saveVehicle(data)     { store.set(KEYS.vehicle, data); }
+  function saveSettings(data)    { store.set(KEYS.settings, data); }
+
+  // ── Theme ────────────────────────────────────────────────────
+  function initTheme() {
+    // Theme is pre-applied in <head> to avoid FOUC; just sync the icon
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    _updateThemeIcon(current);
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('cx50_theme', next);
+    _updateThemeIcon(next);
+  }
+
+  function _updateThemeIcon(theme) {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.innerHTML = theme === 'dark'
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
+  }
 
   // Seed mods on first run
   function seedIfNeeded() {
@@ -251,6 +277,7 @@ const App = (() => {
   function init() {
     window._postRenderHooks = {};
     seedIfNeeded();
+    initTheme();
     document.querySelectorAll('.nav-item').forEach(btn => {
       btn.addEventListener('click', () => navigate(btn.dataset.view));
     });
@@ -267,5 +294,7 @@ const App = (() => {
     getMods, saveMods,
     getFuel, saveFuel,
     getVehicle, saveVehicle,
+    getSettings, saveSettings,
+    toggleTheme,
   };
 })();

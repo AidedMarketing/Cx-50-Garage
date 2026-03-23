@@ -162,6 +162,12 @@ Views.dashboard = function () {
         </div>
       </div>
 
+      <!-- Monthly Spend Chart + Budget -->
+      <div style="margin-top: 16px;">
+        ${buildSpendChart(maintenance, fuel, mods)}
+        ${buildBudgetSection(fuel, maintenance)}
+      </div>
+
       <!-- Top Priority Mod -->
       ${topMod ? `
       <div style="padding: 0 16px; margin-top: 20px;">
@@ -220,6 +226,165 @@ Views.dashboard = function () {
     </div>
   </div>`;
 };
+
+function buildSpendChart(maintenance, fuel, mods) {
+  const now = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleDateString('en-US', { month: 'short' }),
+      fuel: 0, service: 0, mods: 0
+    });
+  }
+  const byKey = Object.fromEntries(months.map((m, i) => [m.key, i]));
+  fuel.forEach(e => { const k = e.date?.slice(0, 7); if (k in byKey) months[byKey[k]].fuel += Number(e.totalPrice) || 0; });
+  maintenance.forEach(e => { const k = e.date?.slice(0, 7); if (k in byKey) months[byKey[k]].service += Number(e.cost) || 0; });
+  mods.filter(m => m.status === 'installed' && m.dateInstalled).forEach(m => { const k = m.dateInstalled?.slice(0, 7); if (k in byKey) months[byKey[k]].mods += Number(m.actualCost) || 0; });
+
+  const hasData = months.some(m => m.fuel > 0 || m.service > 0 || m.mods > 0);
+  if (!hasData) return '';
+
+  const maxTotal = Math.max(...months.map(m => m.fuel + m.service + m.mods)) || 1;
+  const W = 300, H = 88;
+  const PAD = { top: 10, bottom: 18, left: 30, right: 8 };
+  const iW = W - PAD.left - PAD.right;
+  const iH = H - PAD.top - PAD.bottom;
+  const barW = (iW / months.length) * 0.54;
+  const barGap = iW / months.length;
+  const xOf = i => PAD.left + i * barGap + (barGap - barW) / 2;
+  const hOf = v => Math.max((v / maxTotal) * iH, v > 0 ? 2 : 0);
+
+  const bars = months.map((m, i) => {
+    const x = xOf(i); let y = PAD.top + iH; const segs = [];
+    if (m.fuel > 0)    { const h = hOf(m.fuel);    y -= h; segs.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="var(--accent)" rx="2"/>`); }
+    if (m.service > 0) { const h = hOf(m.service); y -= h; segs.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="var(--amber)" rx="2"/>`); }
+    if (m.mods > 0)    { const h = hOf(m.mods);    y -= h; segs.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="var(--blue)" rx="2"/>`); }
+    segs.push(`<text x="${(x + barW/2).toFixed(1)}" y="${PAD.top + iH + 12}" text-anchor="middle" font-size="8" fill="var(--text-tertiary)" font-family="var(--font-ui)">${m.label}</text>`);
+    return segs.join('');
+  }).join('');
+
+  const fmtY = v => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v.toFixed(0)}`;
+  const gridLines = [0, 0.5, 1].map(t => {
+    const y = PAD.top + t * iH;
+    return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border-light)" stroke-width="1"/>
+            <text x="${PAD.left - 3}" y="${y + 3.5}" text-anchor="end" font-size="7" fill="var(--text-tertiary)" font-family="var(--font-ui)">${fmtY(maxTotal * (1 - t))}</text>`;
+  }).join('');
+
+  return `
+  <div style="padding: 0 16px 4px;">
+    <div class="card" style="padding: 14px 14px 10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12px; font-weight:500; color:var(--text-secondary);">Monthly Spend</span>
+        <div style="display:flex; gap:10px; font-size:10px; color:var(--text-tertiary);">
+          <span><span style="display:inline-block;width:7px;height:7px;background:var(--accent);border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Fuel</span>
+          <span><span style="display:inline-block;width:7px;height:7px;background:var(--amber);border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Service</span>
+          <span><span style="display:inline-block;width:7px;height:7px;background:var(--blue);border-radius:1px;margin-right:3px;vertical-align:middle;"></span>Mods</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:${H}px; display:block;">
+        ${gridLines}
+        ${bars}
+      </svg>
+    </div>
+  </div>`;
+}
+
+function buildBudgetSection(fuel, maintenance) {
+  const s = App.getSettings();
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthName = now.toLocaleDateString('en-US', { month: 'long' });
+
+  if (!s.monthlyFuelBudget && !s.monthlyServiceBudget) {
+    return `
+    <div style="padding: 0 16px 4px;">
+      <div class="card" style="padding: 12px 14px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:13px; color:var(--text-tertiary);">Track monthly spend vs. budget</span>
+        <button onclick="openBudgetEdit()" style="font-size:12px; color:var(--accent); font-weight:500; font-family:var(--font-ui); flex-shrink:0;">Set up →</button>
+      </div>
+    </div>`;
+  }
+
+  const fuelThis    = fuel.filter(e => e.date?.slice(0, 7) === curMonth).reduce((s, e) => s + (Number(e.totalPrice) || 0), 0);
+  const serviceThis = maintenance.filter(e => e.date?.slice(0, 7) === curMonth).reduce((s, e) => s + (Number(e.cost) || 0), 0);
+
+  function bar(spent, budget, baseColor) {
+    const pct = Math.min((spent / budget) * 100, 100);
+    const col = pct >= 100 ? 'var(--accent)' : pct >= 80 ? 'var(--amber)' : baseColor;
+    return `<div style="height:5px; background:var(--bg-subtle); border-radius:3px; overflow:hidden; margin-top:4px;">
+      <div style="width:${pct.toFixed(1)}%; height:100%; background:${col}; border-radius:3px;"></div>
+    </div>`;
+  }
+
+  const rows = [];
+  if (s.monthlyFuelBudget) rows.push(`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span style="color:var(--text-secondary);">Fuel</span>
+        <span style="color:var(--text-primary);">${App.formatCurrency(fuelThis)} <span style="color:var(--text-tertiary);">/ ${App.formatCurrency(s.monthlyFuelBudget)}</span></span>
+      </div>
+      ${bar(fuelThis, s.monthlyFuelBudget, 'var(--accent)')}
+    </div>`);
+  if (s.monthlyServiceBudget) rows.push(`
+    <div>
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span style="color:var(--text-secondary);">Service</span>
+        <span style="color:var(--text-primary);">${App.formatCurrency(serviceThis)} <span style="color:var(--text-tertiary);">/ ${App.formatCurrency(s.monthlyServiceBudget)}</span></span>
+      </div>
+      ${bar(serviceThis, s.monthlyServiceBudget, 'var(--amber)')}
+    </div>`);
+
+  return `
+  <div style="padding: 0 16px 4px;">
+    <div class="card" style="padding: 14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:12px; font-weight:500; color:var(--text-secondary);">${monthName} Budget</span>
+        <button onclick="openBudgetEdit()" style="font-size:11px; color:var(--text-tertiary); font-family:var(--font-ui);">Edit</button>
+      </div>
+      ${rows.join('')}
+    </div>
+  </div>`;
+}
+
+function openBudgetEdit() {
+  const s = App.getSettings();
+  App.openModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Monthly Budget</span>
+      <button class="modal-close" onclick="App.closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Monthly Fuel Budget ($)</label>
+        <input type="number" class="form-input" id="b-fuel" placeholder="e.g. 200" value="${s.monthlyFuelBudget || ''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monthly Service Budget ($)</label>
+        <input type="number" class="form-input" id="b-service" placeholder="e.g. 100" value="${s.monthlyServiceBudget || ''}">
+      </div>
+      <p style="font-size:12px; color:var(--text-tertiary); margin-bottom:16px; line-height:1.5;">Leave blank to hide a category. Resets tracked spending each calendar month automatically.</p>
+      <button class="btn-primary" onclick="saveBudget()">Save Budget</button>
+    </div>
+  `);
+}
+
+function saveBudget() {
+  const fuel    = document.getElementById('b-fuel').value;
+  const service = document.getElementById('b-service').value;
+  App.saveSettings({
+    ...App.getSettings(),
+    monthlyFuelBudget:    fuel    ? Number(fuel)    : null,
+    monthlyServiceBudget: service ? Number(service) : null,
+  });
+  App.closeModal();
+  App.toast('Budget saved ✓');
+  App.navigate('dashboard');
+}
 
 function openVehicleEdit() {
   const v = App.getVehicle();

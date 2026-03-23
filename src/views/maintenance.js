@@ -2,6 +2,8 @@
 
 window.Views = window.Views || {};
 
+let _maintViewMode = 'list';
+
 const MAINT_FILTERS = [
   { key: 'all',        label: 'All' },
   { key: 'oil',        label: 'Oil',       types: ['Oil & Filter Change'] },
@@ -11,6 +13,39 @@ const MAINT_FILTERS = [
   { key: 'filters',    label: 'Filters',   types: ['Cabin Air Filter', 'Engine Air Filter'] },
   { key: 'other',      label: 'Other',     types: ['Spark Plugs', 'Multi-Point Inspection', 'Wiper Blades', 'Detail / Wash', 'Battery', 'Other'] },
 ];
+
+function renderMaintenanceTimeline(entries) {
+  if (entries.length === 0) return `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <p>No service entries yet.</p>
+    </div>`;
+
+  const dotColor = type => {
+    if (!type) return 'var(--text-tertiary)';
+    if (type.includes('Oil'))    return 'var(--accent)';
+    if (type.includes('Tire') || type.includes('Align')) return 'var(--blue)';
+    if (type.includes('Brake'))  return 'var(--amber)';
+    if (type.includes('Filter')) return 'var(--green)';
+    return 'var(--text-tertiary)';
+  };
+
+  return `<div style="padding: 4px 0 8px;">` +
+    entries.map((e, i) => `
+      <div style="display:flex; gap:14px; padding-bottom:0;">
+        <div style="display:flex; flex-direction:column; align-items:center; width:14px; flex-shrink:0; padding-top:4px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${dotColor(e.type)};flex-shrink:0;"></div>
+          ${i < entries.length - 1 ? `<div style="width:1.5px;flex:1;background:var(--border-light);margin-top:3px;min-height:20px;"></div>` : ''}
+        </div>
+        <div style="flex:1;padding-bottom:${i < entries.length - 1 ? '14px' : '4px'};cursor:pointer;" onclick="openMaintenanceDetail('${e.id}')">
+          <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">${e.type || 'Service'}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">${App.formatDate(e.date)}${e.mileage ? ' · ' + App.formatMileage(e.mileage) : ''}</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;">${[e.shop, e.cost ? App.formatCurrency(e.cost) : ''].filter(Boolean).join(' · ')}</div>
+          ${e.partsUsed ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;font-style:italic;">${e.partsUsed.length > 65 ? e.partsUsed.slice(0, 65) + '…' : e.partsUsed}</div>` : ''}
+        </div>
+      </div>`
+    ).join('') + `</div>`;
+}
 
 function renderMaintenanceList(entries, filter) {
   const def = MAINT_FILTERS.find(f => f.key === filter);
@@ -33,8 +68,25 @@ Views.maintenance = function () {
       if (!pill) return;
       document.querySelectorAll('#maint-filter-bar .filter-pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
+      if (_maintViewMode === 'list') {
+        const all = [...App.getMaintenance()].sort((a, b) => new Date(b.date) - new Date(a.date));
+        document.getElementById('maint-list').innerHTML = renderMaintenanceList(all, pill.dataset.filter);
+      }
+    });
+
+    document.getElementById('maint-view-toggles')?.addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-mode]');
+      if (!btn) return;
+      _maintViewMode = btn.dataset.mode;
+      document.querySelectorAll('#maint-view-toggles [data-mode]').forEach(b => {
+        b.classList.toggle('view-toggle-active', b.dataset.mode === _maintViewMode);
+      });
       const all = [...App.getMaintenance()].sort((a, b) => new Date(b.date) - new Date(a.date));
-      document.getElementById('maint-list').innerHTML = renderMaintenanceList(all, pill.dataset.filter);
+      const activePill = document.querySelector('#maint-filter-bar .filter-pill.active');
+      const filter = activePill?.dataset.filter || 'all';
+      document.getElementById('maint-list').innerHTML = _maintViewMode === 'timeline'
+        ? renderMaintenanceTimeline(all)
+        : renderMaintenanceList(all, filter);
     });
   };
 
@@ -47,14 +99,24 @@ Views.maintenance = function () {
           <div class="subtitle">${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · ${App.formatCurrency(totalCost)} total</div>
         </div>
         ${entries.length > 0 ? `
-        <button onclick="App.exportData('maintenance')" style="
-          padding:7px 12px; border:1px solid var(--border); border-radius: var(--radius-sm);
-          font-size:12px; color: var(--text-tertiary); font-family: var(--font-ui);
-          background: var(--bg-card); display:flex; align-items:center; gap:5px; margin-bottom:2px;
-        ">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export
-        </button>` : ''}
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+          <div id="maint-view-toggles" style="display:flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden;">
+            <button data-mode="list" class="${_maintViewMode === 'list' ? 'view-toggle-active' : ''}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);" title="List view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+            </button>
+            <button data-mode="timeline" class="${_maintViewMode === 'timeline' ? 'view-toggle-active' : ''}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);border-left:1px solid var(--border);" title="Timeline view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </button>
+          </div>
+          <button onclick="App.exportData('maintenance')" style="
+            padding:6px 10px; border:1px solid var(--border); border-radius: var(--radius-sm);
+            font-size:12px; color: var(--text-tertiary); font-family: var(--font-ui);
+            background: var(--bg-card); display:flex; align-items:center; gap:5px;
+          ">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>` : ''}
       </div>
     </div>
 
@@ -69,7 +131,7 @@ Views.maintenance = function () {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
           <p>No service entries yet.<br>Tap + to log your first service.</p>
         </div>` :
-        renderMaintenanceList(entries, 'all')
+        _maintViewMode === 'timeline' ? renderMaintenanceTimeline(entries) : renderMaintenanceList(entries, 'all')
       }
     </div>
 
