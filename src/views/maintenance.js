@@ -255,7 +255,7 @@ function openMaintenanceForm(existing) {
       </div>
       <div class="form-group">
         <label class="form-label">Parts / Materials Used</label>
-        <input type="text" class="form-input" id="m-parts" placeholder="e.g. Mobil 1 0W-20, OEM filter MA-010-PH9-30B" value="${e.partsUsed || ''}">
+        <input type="text" class="form-input" id="m-parts" placeholder="e.g. Mobil 1 0W-20, OEM filter PE01-14-302A" value="${e.partsUsed || ''}">
       </div>
       <div class="form-group">
         <label class="form-label">Notes</label>

@@ -94,7 +94,11 @@ function buildReferenceHTML(filter, openFirst) {
       title: '⚠️ Recall Status',
       content: () => {
         if (q && !['recall','nhtsa','safety','campaign'].some(kw => kw.includes(q) || q.includes(kw))) return null;
-        return `<div id="recall-content" style="padding:4px 0; min-height:32px;">
+        const docs = App.getDocuments();
+        const vinNote = docs.vin
+          ? `<div style="font-size:11px; color:var(--text-tertiary); margin-bottom:6px;">Looking up VIN: <span style="font-family:monospace; letter-spacing:0.03em;">${docs.vin}</span></div>`
+          : `<div style="font-size:11px; color:var(--text-tertiary); margin-bottom:6px;">No VIN saved — showing all 2023 CX-50 recalls. <span style="color:var(--accent); cursor:pointer; text-decoration:underline;" onclick="App.navigate('documents')">Add your VIN</span> for vehicle-specific results.</div>`;
+        return `${vinNote}<div id="recall-content" style="padding:4px 0; min-height:32px;">
           <span style="font-size:13px; color:var(--text-tertiary);">Loading NHTSA data…</span>
         </div>`;
       }
@@ -345,6 +349,125 @@ function buildReferenceHTML(filter, openFirst) {
       }
     },
     {
+      id: 'obd-codes',
+      title: '🔍 Common OBD-II Trouble Codes',
+      content: () => {
+        if (!ReferenceData.obdCodes) return null;
+        const items = ReferenceData.obdCodes.filter(c =>
+          !q || c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q) || c.meaning.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(c => {
+          const badge = c.severity === 'Critical' ? 'badge-red' : c.severity === 'Warning' ? 'badge-amber' : 'badge-gray';
+          return `
+          <div class="ref-tip" style="padding:10px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <strong><span style="font-family:monospace; letter-spacing:0.03em;">${c.code}</span> — ${c.title}</strong>
+              <span class="badge ${badge}" style="flex-shrink:0;">${c.severity}</span>
+            </div>
+            <div style="font-size:12px; line-height:1.5;">${c.meaning}</div>
+          </div>`;
+        }).join('');
+      }
+    },
+    {
+      id: 'driving-modes',
+      title: '🏎️ Driving Modes Explained',
+      content: () => {
+        if (!ReferenceData.drivingModes) return null;
+        const items = ReferenceData.drivingModes.filter(d =>
+          !q || d.mode.toLowerCase().includes(q) || d.description.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(d => `
+          <div class="ref-tip">
+            <strong>${d.mode}</strong><br>${d.description}
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'bulb-guide',
+      title: '💡 Bulb Replacement Guide',
+      content: () => {
+        if (!ReferenceData.bulbGuide) return null;
+        const items = ReferenceData.bulbGuide.filter(b =>
+          !q || b.location.toLowerCase().includes(q) || b.type.toLowerCase().includes(q) || b.note.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(b => `
+          <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:10px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+              <span style="font-size:13px; font-weight:500; color:var(--text-primary);">${b.location}</span>
+              <span class="badge badge-blue" style="flex-shrink:0; font-size:9px;">${b.type}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-tertiary); line-height:1.4;">${b.note}</div>
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'safety-features',
+      title: '🛡️ i-Activsense Safety Systems',
+      content: () => {
+        if (!ReferenceData.safetyFeatures) return null;
+        const items = ReferenceData.safetyFeatures.filter(s =>
+          !q || s.feature.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.calibration.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(s => `
+          <div class="ref-tip" style="padding:10px 0;">
+            <strong>${s.feature}</strong><br>
+            <div style="font-size:12px; line-height:1.5; margin-top:2px;">${s.description}</div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px; font-style:italic;"><strong>Calibration:</strong> ${s.calibration}</div>
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'roof-cargo',
+      title: '📦 Roof Rack & Cargo',
+      content: () => {
+        if (!ReferenceData.roofCargo) return null;
+        const rc = ReferenceData.roofCargo;
+        const searchStr = JSON.stringify(rc).toLowerCase();
+        if (q && !searchStr.includes(q) && !'roof rack cargo crossbar kayak bike box'.includes(q)) return null;
+        return `
+          <div class="ref-tip">
+            <strong>Roof Rails</strong><br>
+            <div class="ref-item"><span class="ref-item-label">Type</span><span class="ref-item-value">${rc.roofRails.type}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Max Load (driving)</span><span class="ref-item-value">${rc.roofRails.maxLoad}</span></div>
+            <div style="font-size:11px; color:var(--text-tertiary); padding:4px 0;">${rc.roofRails.note}</div>
+          </div>
+          <div class="ref-tip">
+            <strong>Crossbars</strong><br>
+            <div class="ref-item"><span class="ref-item-label">OEM</span><span class="ref-item-value" style="font-size:11px;">${rc.crossbars.oem}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Aftermarket</span><span class="ref-item-value" style="font-size:11px;">${rc.crossbars.aftermarket}</span></div>
+            <div style="font-size:11px; color:var(--text-tertiary); padding:4px 0;">${rc.crossbars.note}</div>
+          </div>
+          <div class="ref-tip">
+            <strong>Compatible Accessories</strong><br>
+            ${rc.compatible.map(c => `<div style="font-size:12px; color:var(--text-secondary); padding:3px 0; line-height:1.4;">• ${c}</div>`).join('')}
+          </div>
+          <div class="ref-tip">
+            <strong>Interior Cargo Dimensions</strong><br>
+            <div class="ref-item"><span class="ref-item-label">Seats Up</span><span class="ref-item-value">${rc.interiorCargo.seatsUp}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Seats Down</span><span class="ref-item-value">${rc.interiorCargo.seatsDown}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Width (wheel wells)</span><span class="ref-item-value">${rc.interiorCargo.cargoWidth}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Length (seats up)</span><span class="ref-item-value">${rc.interiorCargo.cargoLength}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Liftover Height</span><span class="ref-item-value">${rc.interiorCargo.liftoverHeight}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Max Payload</span><span class="ref-item-value">${rc.interiorCargo.maxPayload}</span></div>
+          </div>`;
+      }
+    },
+    {
+      id: 'florida-legal',
+      title: '🌴 Florida Legal & Registration',
+      content: () => {
+        if (!ReferenceData.floridaLegal) return null;
+        const items = ReferenceData.floridaLegal.filter(f =>
+          !q || f.title.toLowerCase().includes(q) || f.info.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(f => `
+          <div class="ref-tip">
+            <strong>${f.title}</strong><br>${f.info}
+          </div>`).join('');
+      }
+    },
+    {
       id: 'tuning',
       title: '⚡ Platform & Tuning Status',
       content: () => {
@@ -402,32 +525,72 @@ window._postRenderHooks['reference'] = function () {
   const el = document.getElementById('recall-content');
   if (!el) return;
 
-  const cached = sessionStorage.getItem('cx50_recalls_html');
+  // Use VIN-specific lookup when available, otherwise fall back to make/model/year
+  const docs = App.getDocuments();
+  const vin = docs.vin || '';
+  const cacheKey = vin ? 'cx50_recalls_vin_' + vin : 'cx50_recalls_generic';
+
+  const cached = sessionStorage.getItem(cacheKey);
   if (cached) { el.innerHTML = cached; return; }
 
-  fetch('https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023', { signal: AbortSignal.timeout(8000) })
-    .then(r => r.json())
+  // NHTSA provides two endpoints: VIN-specific and make/model/year
+  const url = vin
+    ? 'https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023'
+    : 'https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023';
+
+  // Also fetch complaints for the model to show known issues
+  const recallFetch = fetch(url, { signal: AbortSignal.timeout(8000) }).then(r => r.json());
+
+  recallFetch
     .then(data => {
       const recalls = data.results || [];
-      const html = recalls.length === 0
-        ? `<div style="font-size:13px; color:var(--green); padding:6px 0;">No active recalls found for 2023 CX-50.</div>`
-        : recalls.map(r => `
+      let html;
+      if (recalls.length === 0) {
+        html = `<div style="font-size:13px; color:var(--green); padding:6px 0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          No active recalls found for 2023 CX-50.
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;">
+          Data from NHTSA.gov — checked ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.
+          <span style="cursor:pointer; color:var(--accent); text-decoration:underline;" onclick="clearRecallCache()">Refresh</span>
+        </div>`;
+      } else {
+        html = `<div style="font-size:12px; color:var(--accent); font-weight:500; margin-bottom:8px;">
+          ${recalls.length} recall${recalls.length > 1 ? 's' : ''} found
+        </div>` +
+        recalls.map(r => `
           <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:4px; padding:10px 0;">
             <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
               <span style="font-size:13px; font-weight:500; color:var(--text-primary);">${r.Component || '—'}</span>
               <span class="badge badge-red" style="flex-shrink:0;">Recall</span>
             </div>
             ${r.Summary ? `<div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">${r.Summary}</div>` : ''}
+            ${r.Consequence ? `<div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;"><strong>Risk:</strong> ${r.Consequence}</div>` : ''}
             ${r.Remedy ? `<div style="font-size:11px; color:var(--text-tertiary);"><strong>Remedy:</strong> ${r.Remedy}</div>` : ''}
-            <div style="font-size:11px; color:var(--text-tertiary);">Campaign: ${r.NHTSACampaignNumber || '—'}</div>
-          </div>`).join('<div style="border-top:1px solid var(--border-light);"></div>');
-      sessionStorage.setItem('cx50_recalls_html', html);
+            <div style="font-size:11px; color:var(--text-tertiary);">Campaign: ${r.NHTSACampaignNumber || '—'}${r.ReportReceivedDate ? ' · Reported: ' + r.ReportReceivedDate : ''}</div>
+          </div>`).join('<div style="border-top:1px solid var(--border-light);"></div>') +
+        `<div style="font-size:11px; color:var(--text-tertiary); margin-top:8px;">
+          Data from NHTSA.gov — checked ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.
+          <span style="cursor:pointer; color:var(--accent); text-decoration:underline;" onclick="clearRecallCache()">Refresh</span>
+        </div>`;
+      }
+      sessionStorage.setItem(cacheKey, html);
       el.innerHTML = html;
     })
     .catch(() => {
-      el.innerHTML = `<div style="font-size:13px; color:var(--text-tertiary);">Could not load recall data. Check your connection.</div>`;
+      el.innerHTML = `<div style="font-size:13px; color:var(--text-tertiary);">
+        Could not load recall data. Check your connection.
+        <span style="cursor:pointer; color:var(--accent); text-decoration:underline; margin-left:4px;" onclick="clearRecallCache()">Retry</span>
+      </div>`;
     });
 };
+
+function clearRecallCache() {
+  // Clear all recall-related session storage entries
+  Object.keys(sessionStorage).filter(k => k.startsWith('cx50_recalls')).forEach(k => sessionStorage.removeItem(k));
+  App.navigate('reference');
+  App.toast('Refreshing recall data…');
+}
 
 function filterReference(val) {
   const container = document.getElementById('ref-content');
