@@ -13,8 +13,8 @@ const ReferenceData = {
     { label: 'Drivetrain',      value: 'i-Activ AWD' },
     { label: 'Fuel Type',       value: 'Premium 91+ octane (recommended)' },
     { label: 'Fuel Tank',       value: '15.9 gallons' },
-    { label: 'Oil Spec',        value: '5W-30 Full Synthetic (API SP / GF-6)' },
-    { label: 'Oil Capacity',    value: '5.1 US qt (with filter) / 4.9 US qt (without)' },
+    { label: 'Oil Spec',        value: '0W-20 Full Synthetic (API SP / ILSAC GF-6A)' },
+    { label: 'Oil Capacity',    value: '4.8 US qt (with filter) / 4.5 US qt (without)' },
     { label: 'Tire Size (Meridian)', value: '225/60R18 (Falken Wildpeak A/T Trail)' },
     { label: 'Tire Pressure',   value: '35 PSI (front & rear)' },
     { label: 'Wiper — Driver',  value: '26" (J-hook connector)' },
@@ -99,7 +99,7 @@ const ReferenceData = {
   ],
 
   maintenanceSchedule: [
-    { interval: 'Every 5,000 mi / 6 months',  item: 'Engine Oil & Filter (5W-30 Full Synthetic)', notes: 'More frequent in Miami heat; do not exceed 7,500 mi' },
+    { interval: 'Every 5,000 mi / 6 months',  item: 'Engine Oil & Filter (0W-20 Full Synthetic)', notes: 'More frequent in Miami heat; do not exceed 7,500 mi' },
     { interval: 'Every 5,000 mi',             item: 'Tire Rotation', notes: 'Check pressure and tread depth at each rotation' },
     { interval: 'Every 10,000 mi',            item: 'Cabin Air Filter Inspection', notes: 'Replace if discolored; Miami dust/pollen clogs faster' },
     { interval: 'Every 15,000 mi',            item: 'Engine Air Filter Inspection', notes: 'Inspect; replace if dirty (DIY: 10 min)' },
@@ -172,7 +172,7 @@ const ReferenceData = {
 
   // ── Fluid Capacities & Specs ───────────────────────────────
   fluidSpecs: [
-    { label: 'Engine Oil',        value: '5W-30 Full Synthetic (API SP / GF-6)',  capacity: '5.1 US qt (with filter)' },
+    { label: 'Engine Oil',        value: '0W-20 Full Synthetic (API SP / ILSAC GF-6A)',  capacity: '4.8 US qt (with filter)' },
     { label: 'Coolant',           value: 'Mazda FL-22 Long-Life (pre-mixed)',     capacity: '~7.9 US qt (total system)' },
     { label: 'Transmission Fluid',value: 'Mazda ATF FZ (SkyActiv-Drive)',          capacity: '~8.2 US qt (total system)' },
     { label: 'Brake Fluid',       value: 'DOT 3 or DOT 4',                        capacity: 'Fill to MAX line on reservoir' },
@@ -186,7 +186,7 @@ const ReferenceData = {
   torqueSpecs: [
     { part: 'Lug Nuts',               spec: '80 lb-ft (108 Nm)',    note: 'Star pattern; re-torque after 50–100 miles' },
     { part: 'Oil Drain Plug',         spec: '30 lb-ft (40 Nm)',     note: 'Replace crush washer each oil change' },
-    { part: 'Oil Filter',             spec: 'Hand-tight + ¾ turn',  note: 'Do not over-tighten; Mazda P/N PE02-14-302A' },
+    { part: 'Oil Filter',             spec: 'Hand-tight + ¾ turn',  note: 'Do not over-tighten; Mazda P/N PE01-14-302A' },
     { part: 'Spark Plugs',            spec: '11–17 lb-ft (15–23 Nm)', note: 'Iridium; anti-seize not recommended on coated threads' },
     { part: 'Skid Plate Bolts',       spec: '12–17 lb-ft (16–23 Nm)', note: 'Access required for oil changes' },
     { part: 'Engine Mount Bolts',     spec: '68 lb-ft (93 Nm)',     note: 'Check during multi-point inspection' },
@@ -345,4 +345,105 @@ const ReferenceData = {
       'After the 3-year trial, all remote features require the paid subscription.',
     ],
   },
+
+  // ── Common OBD-II Trouble Codes ──────────────────────────────
+  obdCodes: [
+    { code: 'P0299', title: 'Turbocharger Underboost', severity: 'Warning', meaning: 'Boost pressure is below expected level. Common causes: boost leak in intercooler piping, wastegate actuator stuck open, dirty or clogged air filter, or faulty boost pressure sensor. Check intercooler connections and air filter first.' },
+    { code: 'P0171', title: 'System Too Lean (Bank 1)', severity: 'Warning', meaning: 'Engine running lean — too much air or not enough fuel. Common causes: vacuum leak, dirty MAF sensor, weak fuel pump, or cracked intake boot. Clean the MAF sensor with dedicated MAF cleaner (not brake cleaner) as a first step.' },
+    { code: 'P0174', title: 'System Too Lean (Bank 2)', severity: 'Warning', meaning: 'Same as P0171 but on Bank 2. On the 2.5T inline-4, this typically appears alongside P0171 if the issue is upstream of the manifold (vacuum leak, MAF sensor). If P0174 appears alone, check injectors or fuel delivery on that side.' },
+    { code: 'P0420', title: 'Catalyst Efficiency Below Threshold', severity: 'Advisory', meaning: 'The catalytic converter is not cleaning exhaust efficiently. Often appears after extended idling or short trips. Can be a failing cat, but also caused by an exhaust leak before the rear O2 sensor. Covered under federal emissions warranty (8yr/80k mi).' },
+    { code: 'P0300', title: 'Random/Multiple Cylinder Misfire', severity: 'Critical', meaning: 'Multiple cylinders are misfiring. Stop driving if severe — continued misfiring destroys the catalytic converter. Common causes: bad ignition coil, fouled spark plugs, low fuel pressure, or vacuum leak. Check spark plugs and coil packs first.' },
+    { code: 'P0301–P0304', title: 'Cylinder 1–4 Misfire', severity: 'Critical', meaning: 'Misfire detected on a specific cylinder. Swap the ignition coil from the misfiring cylinder to another — if the code follows, replace the coil. If it stays, check the spark plug and then injector on that cylinder.' },
+    { code: 'P0016', title: 'Crankshaft/Camshaft Position Correlation', severity: 'Warning', meaning: 'Cam timing is off from the expected position. On the SkyActiv 2.5T, this usually indicates a stretched timing chain, failed VVT solenoid, or low oil pressure affecting the variable valve timing. Do not ignore — can cause engine damage.' },
+    { code: 'P0128', title: 'Coolant Thermostat Below Regulating Temp', severity: 'Advisory', meaning: 'Engine is taking too long to reach operating temperature. Usually a stuck-open thermostat. Common in cooler months. Not urgent but affects fuel economy and heater performance.' },
+    { code: 'P2096', title: 'Post Catalyst Fuel Trim Too Lean', severity: 'Advisory', meaning: 'Downstream O2 sensor reading lean. May indicate a small exhaust leak at the manifold gasket or flex pipe, or an aging catalytic converter. Often paired with P0420.' },
+    { code: 'P0456', title: 'EVAP System Small Leak', severity: 'Advisory', meaning: 'Small leak in the evaporative emissions system. Most common cause: loose or worn gas cap. Tighten the cap until it clicks, clear the code, and see if it returns. If it does, check EVAP purge valve and canister vent.' },
+    { code: 'C1141', title: 'TPMS Sensor Fault', severity: 'Advisory', meaning: 'One or more TPMS sensors not communicating. Could be a dead sensor battery (they last 5–10 years), or sensor damage from a tire change. Sensor ID must be reprogrammed after replacement — most tire shops have the tool.' },
+    { code: 'U0073', title: 'Control Module Communication Bus Off', severity: 'Warning', meaning: 'CAN bus communication failure between modules. Can cause multiple warning lights at once. Check battery terminals for corrosion first. If the battery is weak or alternator failing, CAN bus errors cascade across all modules.' },
+  ],
+
+  // ── Driving Modes Explained ──────────────────────────────────
+  drivingModes: [
+    { mode: 'Normal', description: 'Default driving mode. Linear throttle response, standard transmission shift points, balanced AWD torque distribution (primarily front-biased). Best for everyday commuting and highway cruising. Prioritizes fuel economy and smooth operation.' },
+    { mode: 'Sport', description: 'Sharper throttle mapping with quicker response to pedal input. Transmission holds gears longer and downshifts more aggressively. Steering feel firms up slightly. AWD system distributes more torque to the rear. Paddle shifters give full manual control. Best for spirited driving and on-ramps.' },
+    { mode: 'Off-Road (if equipped)', description: 'Available on trims with Off-Road mode. Adjusts throttle for low-speed control, loosens traction control to allow more wheel slip, and optimizes AWD for uneven terrain. Hill descent control active. Shift points adjusted for low-speed torque. Best for gravel roads, trails, and sandy/muddy conditions.' },
+    { mode: 'i-Activ AWD Behavior', description: 'Not a selectable mode — always active. The i-Activ AWD system uses 27 sensors to predict traction loss before it happens. Monitors: steering angle, road surface, wiper speed, outside temperature, brake pressure, throttle position, and yaw rate. In dry conditions, operates near 100% front-wheel drive. Seamlessly shifts torque rearward when slip is predicted — not reactive, predictive.' },
+    { mode: 'Traction Control (TCS)', description: 'Enabled by default. Press and hold TCS button (near shifter) for 3 seconds to disable. Disabling TCS allows more wheelspin — useful for rocking out of sand or snow. TCS re-enables automatically on next ignition cycle. Even with TCS off, stability control remains active unless the car detects you are in Off-Road mode.' },
+    { mode: 'i-Stop (Auto Start-Stop)', description: 'Automatically shuts off the engine at stops to save fuel. Restarts instantly when you release the brake. Conditions that prevent i-Stop: A/C compressor load too high, battery charge low, engine not at operating temperature, steep incline, or steering wheel turned. Hold the i-Stop button for 2–3 seconds to disable for the current drive cycle.' },
+  ],
+
+  // ── Bulb Replacement Guide ───────────────────────────────────
+  bulbGuide: [
+    { location: 'Low Beam Headlights', type: 'LED (factory)', note: 'Not user-replaceable bulbs — integrated LED module. Replacement requires the full headlight assembly or a dealer-installed LED module. Covered under bumper-to-bumper warranty.' },
+    { location: 'High Beam Headlights', type: 'LED (factory)', note: 'Same as low beam — integrated LED. Meridian Edition has Adaptive Front-Lighting System (AFS) that swivels with steering.' },
+    { location: 'Daytime Running Lights (DRL)', type: 'LED (factory)', note: 'Integrated LED strip. Not individually replaceable. Failure is rare; covered under warranty.' },
+    { location: 'Front Turn Signals', type: 'LED (factory)', note: 'Integrated into headlight assembly. If switching to aftermarket, ensure compatible LED driver.' },
+    { location: 'Fog Lights', type: 'H11 halogen (or LED upgrade)', note: 'Located in lower bumper. Twist-lock socket, accessible from under the fender liner. H11 bulbs are easy to upgrade to LED — just ensure proper beam pattern to avoid blinding oncoming drivers.' },
+    { location: 'Rear Tail/Brake Lights', type: 'LED (factory)', note: 'Full LED tail lights on all trims. Not individually replaceable. Entire tail light assembly if needed.' },
+    { location: 'Rear Turn Signals', type: 'LED (factory)', note: 'Integrated into tail light assembly.' },
+    { location: 'Reverse Lights', type: 'T15 / 921 wedge bulb', note: 'Accessible from inside the liftgate trim. Pop the trim cover, twist the socket counterclockwise, and pull. Easy LED upgrade — improves rear visibility significantly at night.' },
+    { location: 'License Plate Lights', type: 'T10 / 194 wedge bulb', note: 'Two small bulbs under the liftgate lip. Pry the lens housing gently with a trim tool. Popular LED upgrade for a cleaner look.' },
+    { location: 'Interior Dome / Map Lights', type: 'T10 / 194 or festoon (varies)', note: 'Map lights above the rearview mirror and dome light use T10 wedge bulbs. Cargo area light is a festoon 31mm. Easy DIY LED swap — use 6000K for a clean white interior.' },
+    { location: 'Glove Box Light', type: 'T10 / 194 wedge bulb', note: 'Pry the lens gently. Often upgraded alongside other interior LEDs.' },
+    { location: 'Side Mirror Turn Signals', type: 'LED (factory)', note: 'Integrated LED strip in mirror housing. Not user-replaceable — full mirror assembly if needed.' },
+  ],
+
+  // ── i-Activsense Safety Systems ──────────────────────────────
+  safetyFeatures: [
+    { feature: 'MRCC (Mazda Radar Cruise Control)', description: 'Adaptive cruise control using front radar. Maintains set speed and following distance. Works from 0–90 mph with full stop-and-go capability. Set via steering wheel controls. Follows the vehicle ahead and can come to a complete stop in traffic, then resume when traffic moves (within ~3 seconds — after that, tap the accelerator or Resume button).', calibration: 'Auto-calibrated. If sensor is blocked (mud, snow on front grille), system temporarily disables with a dashboard message.' },
+    { feature: 'CTS (Cruising & Traffic Support)', description: 'Lane-centering assist that works alongside MRCC. Keeps the car centered in its lane using the front camera. Provides gentle steering inputs — not hands-free. Requires hands on the wheel. If it detects your hands off the wheel for ~15 seconds, it gives a visual warning, then audible, then disables.', calibration: 'Camera behind the windshield. Keep the windshield clean in the camera zone (behind rearview mirror). Recalibrates automatically after windshield replacement.' },
+    { feature: 'SBS (Smart Brake Support)', description: 'Automatic emergency braking. Detects vehicles and pedestrians ahead using camera + radar. If a collision is imminent and you haven\'t braked, it applies full braking force automatically. Works at speeds up to ~100 mph for vehicles, ~50 mph for pedestrians. Can significantly reduce or prevent collisions.', calibration: 'Requires clean windshield camera zone and unobstructed front radar (behind Mazda logo grille area).' },
+    { feature: 'BSM (Blind Spot Monitoring)', description: 'Radar sensors in the rear bumper detect vehicles in your blind spots. Orange warning icon lights up in the side mirror. If you activate the turn signal while a vehicle is detected, the icon flashes and an audible alert sounds. Effective range: approximately one car length behind to the B-pillar.', calibration: 'Rear bumper radar sensors. Keep the rear bumper corners clean — mud, ice, or heavy bug splatter can block the sensors. System shows a warning message when sensors are obstructed.' },
+    { feature: 'RCTA (Rear Cross Traffic Alert)', description: 'Uses the same rear radar sensors as BSM. When reversing out of a parking spot, detects vehicles approaching from either side. Alerts with a visual indicator on the dashboard and an audible warning. Some situations trigger automatic braking to prevent a collision.', calibration: 'Same sensors as BSM. Keep rear bumper clean.' },
+    { feature: 'LDWS (Lane Departure Warning)', description: 'Camera-based system that detects lane markings. Vibrates the steering wheel and shows a visual alert if you drift out of your lane without signaling. Can be set to Warning only or Warning + Lane Keep Assist (gentle steering correction). Does not work below ~35 mph or if lane markings are unclear.', calibration: 'Relies on clear lane markings — less effective on faded roads or in heavy rain. Camera-based.' },
+    { feature: 'DAA (Driver Attention Alert)', description: 'The coffee cup icon. Monitors your steering patterns to detect drowsiness or inattention. If erratic steering is detected, shows a coffee cup icon and suggests taking a break. More sensitive on highway driving. Can be toggled in Settings → Vehicle → Driver Monitoring.', calibration: 'No physical sensor — algorithmic analysis of steering behavior.' },
+    { feature: 'HBC (High Beam Control)', description: 'Automatic high beam headlights. Detects oncoming vehicles and taillights ahead, automatically switching between high and low beams. Works above ~25 mph. Occasionally too sensitive in well-lit urban areas — can be disabled via the headlight stalk (push forward to manual high beam).', calibration: 'Front camera. Clean windshield camera zone for reliable operation.' },
+    { feature: 'FCTA (Front Cross Traffic Alert)', description: 'Detects vehicles approaching from the sides at intersections when you are about to proceed. Uses front radar. Shows visual warning and can apply automatic braking. Especially useful at T-intersections and parking lot exits where visibility is limited.', calibration: 'Front radar behind grille. Keep grille area unobstructed.' },
+    { feature: '360° View Monitor', description: 'Available on Meridian Edition. Four cameras (front, rear, left, right mirrors) create a bird\'s-eye view of the vehicle. Activates automatically in reverse and can be manually activated at low speeds via the camera button on the dashboard. Useful for tight parking. Guidelines are dynamic and follow steering input.', calibration: 'Keep all four camera lenses clean. Lenses can fog or collect water — wipe before use in humid conditions.' },
+  ],
+
+  // ── Roof Rack & Cargo ────────────────────────────────────────
+  roofCargo: {
+    roofRails: {
+      type: 'Factory-installed raised roof rails (Meridian Edition standard)',
+      material: 'Black anodized aluminum with satin finish',
+      maxLoad: '150 lb (68 kg) dynamic load (while driving), 600 lb (272 kg) static load (parked)',
+      note: 'Dynamic load rating includes the weight of crossbars, rack, and cargo combined. Always subtract crossbar weight (~10–15 lb) from the dynamic rating to get usable cargo capacity.',
+    },
+    crossbars: {
+      oem: 'Mazda OEM crossbars (P/N 0000-8L-Z13A) — ~$250 from dealer',
+      aftermarket: 'Thule Evo Raised Rail, Yakima RailBar, or Rhino-Rack Vortex — all compatible with raised rail mounts',
+      maxSpread: 'Approximately 32" between crossbars (adjustable along the rail)',
+      note: 'Crossbars must be removed or secured at car washes. Tighten mounting bolts to hand-tight plus ¼ turn — do not over-torque. Check tightness before each trip.',
+    },
+    compatible: [
+      'Roof cargo box (Thule Motion XT, Yakima SkyBox) — stay within 150 lb total dynamic load',
+      'Kayak/canoe carrier — J-style or saddle mount, single boat typically 40–70 lb',
+      'Bike rack (roof mount) — fork mount or frame mount, 2 bikes max recommended',
+      'Ski/snowboard rack — up to 6 pairs of skis or 4 snowboards',
+      'Rooftop tent — static load only (600 lb), not for driving. Set up while parked only.',
+      'Cargo basket — open-top, good for camping gear. Use a cargo net to secure items.',
+    ],
+    interiorCargo: {
+      seatsUp: '31.4 cu-ft',
+      seatsDown: '56.3 cu-ft',
+      cargoWidth: '~42 inches between wheel wells',
+      cargoLength: '~37 inches (seats up), ~72 inches (seats folded)',
+      liftoverHeight: '~31 inches from ground to cargo floor lip',
+      maxPayload: '~1,050 lb total vehicle payload (passengers + cargo)',
+    },
+  },
+
+  // ── Florida-Specific Legal & Registration ────────────────────
+  floridaLegal: [
+    { title: 'Annual Inspection', info: 'Florida does <strong>not require</strong> annual vehicle safety inspections or emissions testing. Your CX-50 never needs a state inspection sticker. This is different from states like Texas, California, or New York.' },
+    { title: 'Registration Renewal', info: 'Florida vehicle registration renews annually on your <strong>birthday</strong>. You can renew online at GoRenew.com, by mail, or at a county tax collector office. Late renewal incurs a $15 penalty after your birthday. Keep proof of insurance current — it is verified electronically at renewal.' },
+    { title: 'Window Tint Laws', info: '<strong>Front windshield:</strong> non-reflective tint above the AS-1 line only. <strong>Front side windows:</strong> must allow 28%+ VLT (visible light transmission). <strong>Rear side windows:</strong> any tint darkness. <strong>Rear window:</strong> any tint darkness. <strong>Mirrored/metallic tint is banned</strong> on all windows. Violations are a non-moving infraction (~$116 fine).' },
+    { title: 'Insurance Requirements', info: 'Florida requires: <strong>$10,000 PIP</strong> (Personal Injury Protection) and <strong>$10,000 PDL</strong> (Property Damage Liability). Bodily Injury Liability is <strong>not required by law</strong> but strongly recommended (25/50 minimum). Uninsured motorist coverage also highly recommended — Florida has one of the highest uninsured driver rates in the US (~20%).' },
+    { title: 'Toll Systems', info: 'Florida uses <strong>SunPass</strong> (statewide) and <strong>E-PASS</strong> (Central FL). Most toll roads are cashless — you need a transponder or will receive a toll-by-plate bill. SunPass Mini attaches to the windshield. The CX-50 does not have a built-in toll transponder.' },
+    { title: 'Move Over Law', info: 'Florida law requires you to <strong>move over one lane</strong> (or slow to 20 mph below the speed limit) when passing stopped emergency vehicles, tow trucks, or utility vehicles with flashing lights on the roadside. Violation is a moving violation with points on your license.' },
+    { title: 'Hurricane Evacuation Routes', info: 'Know your zone and evacuation route. Miami-Dade evacuation zones are A through E (A is closest to coast). Main routes: <strong>I-75 North</strong> (to Central/North FL), <strong>Florida Turnpike North</strong>, <strong>US-27 North</strong>. During mandatory evacuation, tolls are suspended. Keep your CX-50 tank above half during hurricane season (June 1 – November 30).' },
+    { title: 'Parking on Grass', info: 'Many Florida municipalities (including Miami-Dade) prohibit parking on your front lawn/grass. Fines vary by city. Use your driveway or designated parking areas.' },
+    { title: 'Red Light Cameras', info: 'Florida allows red light cameras. Violations are $158 (no points if paid). Miami-Dade and surrounding cities use them extensively. The camera captures your license plate — the ticket goes to the registered owner regardless of who was driving.' },
+  ],
 };

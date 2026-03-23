@@ -52,6 +52,7 @@ Views.fuel = function () {
           <div class="stat-label">Avg price / gal</div>
         </div>
       </div>
+      ${buildOctaneComparison(sorted)}
     </div>` : ''}
 
     ${buildMpgChart(sorted)}
@@ -72,6 +73,40 @@ Views.fuel = function () {
     </button>
   </div>`;
 };
+
+function buildOctaneComparison(sorted) {
+  // Calculate MPG by octane type — need at least 2 entries per type with consecutive odometer readings
+  const byOctane = {};
+  for (let i = 1; i < sorted.length; i++) {
+    const miles = Number(sorted[i].odometer) - Number(sorted[i-1].odometer);
+    const gallons = Number(sorted[i].gallons);
+    const octane = sorted[i].octane || 'premium';
+    if (miles > 0 && gallons > 0) {
+      if (!byOctane[octane]) byOctane[octane] = { totalMiles: 0, totalGallons: 0, count: 0 };
+      byOctane[octane].totalMiles += miles;
+      byOctane[octane].totalGallons += gallons;
+      byOctane[octane].count++;
+    }
+  }
+  // Only show if we have at least 2 different octane types with data
+  const types = Object.keys(byOctane).filter(k => byOctane[k].count >= 2);
+  if (types.length < 2) return '';
+
+  const labels = { premium: 'Premium (91+)', regular: 'Regular (87)', midgrade: 'Mid (89)', e85: 'E85' };
+  const colors = { premium: 'var(--green)', regular: 'var(--amber)', midgrade: 'var(--blue)', e85: 'var(--text-tertiary)' };
+
+  return `
+    <div class="card" style="margin-top:10px; padding:12px 14px;">
+      <div style="font-size:12px; font-weight:500; color:var(--text-secondary); margin-bottom:8px;">MPG by Octane</div>
+      ${types.map(t => {
+        const avg = (byOctane[t].totalMiles / byOctane[t].totalGallons).toFixed(1);
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:13px;">
+          <span style="color:var(--text-secondary);">${labels[t] || t}</span>
+          <span style="font-weight:600; color:${colors[t] || 'var(--text-primary)'};">${avg} mpg <span style="font-weight:400; font-size:11px; color:var(--text-tertiary);">(${byOctane[t].count} fills)</span></span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
 
 function buildMpgChart(sorted) {
   const mpgData = [];
@@ -184,7 +219,7 @@ function fuelItem(e, allSorted) {
     <div class="list-item-content">
       <div class="list-item-title">${App.formatDate(e.date)}</div>
       <div class="list-item-meta">${e.gallons ? e.gallons + ' gal' : ''}${e.pricePerGallon ? ' · $' + Number(e.pricePerGallon).toFixed(2) + '/gal' : ''}${e.odometer ? ' · ' + App.formatMileage(e.odometer) : ''}</div>
-      ${e.station ? `<div class="list-item-meta" style="margin-top: 2px;">${e.station}</div>` : ''}
+      <div class="list-item-meta" style="margin-top: 2px;">${e.station || ''}${e.station && e.octane && e.octane !== 'premium' ? ' · ' : ''}${e.octane && e.octane !== 'premium' ? '<span style="color:var(--amber);">' + (e.octane === 'regular' ? '87 oct' : e.octane === 'midgrade' ? '89 oct' : 'E85') + '</span>' : ''}</div>
     </div>
     <div class="list-item-right">
       <span class="cost">${App.formatCurrency(e.totalPrice)}</span>
@@ -228,13 +263,24 @@ function openFuelForm(existing) {
         <label class="form-label">Total Paid ($)</label>
         <input type="number" step="0.01" class="form-input" id="f-total" placeholder="auto-calculated" value="${e.totalPrice || ''}">
       </div>
-      <div class="form-group">
-        <label class="form-label">Station / Location</label>
-        <input type="text" class="form-input" id="f-station" placeholder="e.g. Costco Doral" value="${e.station || ''}">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Station / Location</label>
+          <input type="text" class="form-input" id="f-station" placeholder="e.g. Costco Doral" value="${e.station || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Octane</label>
+          <select class="form-select" id="f-octane">
+            <option value="premium" ${(e.octane || 'premium') === 'premium' ? 'selected' : ''}>Premium (91+)</option>
+            <option value="regular" ${e.octane === 'regular' ? 'selected' : ''}>Regular (87)</option>
+            <option value="midgrade" ${e.octane === 'midgrade' ? 'selected' : ''}>Mid-Grade (89)</option>
+            <option value="e85" ${e.octane === 'e85' ? 'selected' : ''}>E85</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Notes</label>
-        <textarea class="form-textarea" id="f-notes" placeholder="Premium, full tank, etc." style="min-height: 60px;">${e.notes || ''}</textarea>
+        <textarea class="form-textarea" id="f-notes" placeholder="Full tank, road trip, etc." style="min-height: 60px;">${e.notes || ''}</textarea>
       </div>
       <button class="btn-primary" onclick="saveFuelEntry('${e.id || ''}')">
         ${e.id ? 'Save Changes' : 'Add Fill-Up'}
@@ -266,6 +312,7 @@ function saveFuelEntry(existingId) {
     pricePerGallon: document.getElementById('f-ppg').value,
     totalPrice:     document.getElementById('f-total').value,
     station:        document.getElementById('f-station').value.trim(),
+    octane:         document.getElementById('f-octane').value,
     notes:          document.getElementById('f-notes').value.trim(),
   };
 

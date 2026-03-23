@@ -121,6 +121,12 @@ Views.dashboard = function () {
           </div>
           <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </div>
+        ${currentOdometer ? `
+        <div style="font-size:22px; font-weight:600; color:#fff; margin-top:14px; letter-spacing:-0.02em;">
+          ${Number(currentOdometer).toLocaleString('en-US')}<span style="font-size:12px; font-weight:400; color:rgba(255,255,255,0.5);"> mi</span>
+        </div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-top:1px;">Current Odometer</div>
+        ` : ''}
         <div class="hero-stats">
           <div>
             <div class="hero-stat-value">${v.hp}<span style="font-size:12px;color:rgba(255,255,255,0.5)"> hp</span></div>
