@@ -4,10 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>CX-50 Garage</title>
+  <meta name="description" content="2023 Mazda CX-50 Turbo — Meridian Edition owner companion. Track maintenance, mods, fuel economy, and more." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="CX-50 Garage" />
+  <meta property="og:description" content="2023 Mazda CX-50 Turbo — Meridian Edition owner companion PWA" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="icons/icon-512.png" />
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#F8F7F4" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 
   <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -86,6 +94,13 @@
         _swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
     }
+
+    /* ── Install prompt (Android) ─────────────────────── */
+    let _deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      _deferredInstallPrompt = e;
+    });
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

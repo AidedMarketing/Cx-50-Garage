@@ -51,8 +51,8 @@ const App = (() => {
     torque: '320',
     drivetrain: 'AWD',
     transmission: '6-Speed Automatic',
-    tiresDriver: '26"',
-    tiresPassenger: '16"',
+    wiperDriver: '26"',
+    wiperPassenger: '16"',
     oilSpec: '0W-20 Full Synthetic',
     oilCapacity: '4.8 qt',
     tirePressure: '35 PSI',
@@ -84,7 +84,13 @@ const App = (() => {
   function getMaintenance() { return store.get(KEYS.maintenance) || []; }
   function getMods()        { return store.get(KEYS.mods)        || DEFAULT_MODS; }
   function getFuel()        { return store.get(KEYS.fuel)        || []; }
-  function getVehicle()     { return { ...DEFAULT_VEHICLE, ...(store.get(KEYS.vehicle) || {}) }; }
+  function getVehicle() {
+    const saved = store.get(KEYS.vehicle) || {};
+    // Migrate legacy property names (tiresDriver/tiresPassenger → wiperDriver/wiperPassenger)
+    if (saved.tiresDriver && !saved.wiperDriver) { saved.wiperDriver = saved.tiresDriver; delete saved.tiresDriver; }
+    if (saved.tiresPassenger && !saved.wiperPassenger) { saved.wiperPassenger = saved.tiresPassenger; delete saved.tiresPassenger; }
+    return { ...DEFAULT_VEHICLE, ...saved };
+  }
   function getSettings()    { return store.get(KEYS.settings)    || {}; }
 
   function saveMaintenance(data) { store.set(KEYS.maintenance, data); }

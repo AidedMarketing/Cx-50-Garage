@@ -18,7 +18,7 @@ Views.reference = function () {
         width:100%; padding:10px 14px 10px 38px; border:1px solid var(--border);
         border-radius: var(--radius-md); background: var(--bg-card); font-size:14px;
         color: var(--text-primary); font-family: var(--font-ui);
-      " placeholder="Search guide…" oninput="filterReference(this.value)" id="ref-search">
+      " placeholder="Search guide…" oninput="filterReference(this.value)" id="ref-search" aria-label="Search owner's guide">
     </div>
 
     <div id="ref-content" style="padding: 0 16px 16px;">
@@ -133,7 +133,7 @@ function buildReferenceHTML(filter, openFirst) {
     if (firstOpen && body) firstOpen = false;
     return `
       <div class="ref-section ${shouldOpen ? 'open' : ''}" id="ref-${s.id}" style="margin-top: 8px;">
-        <div class="ref-section-header" onclick="toggleRefSection('ref-${s.id}')">
+        <div class="ref-section-header" onclick="toggleRefSection('ref-${s.id}')" role="button" tabindex="0" aria-expanded="${shouldOpen ? 'true' : 'false'}" aria-controls="ref-${s.id}-body">
           <h3>${s.title}</h3>
           <svg class="ref-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -145,7 +145,11 @@ function buildReferenceHTML(filter, openFirst) {
 }
 
 function toggleRefSection(id) {
-  document.getElementById(id)?.classList.toggle('open');
+  const section = document.getElementById(id);
+  if (!section) return;
+  section.classList.toggle('open');
+  const header = section.querySelector('.ref-section-header');
+  if (header) header.setAttribute('aria-expanded', section.classList.contains('open'));
 }
 
 window._postRenderHooks = window._postRenderHooks || {};
@@ -156,7 +160,7 @@ window._postRenderHooks['reference'] = function () {
   const cached = sessionStorage.getItem('cx50_recalls_html');
   if (cached) { el.innerHTML = cached; return; }
 
-  fetch('https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023')
+  fetch('https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023', { signal: AbortSignal.timeout(8000) })
     .then(r => r.json())
     .then(data => {
       const recalls = data.results || [];
