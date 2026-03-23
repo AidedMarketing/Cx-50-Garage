@@ -39,6 +39,7 @@ const App = (() => {
     fuel:        'cx50_fuel',
     vehicle:     'cx50_vehicle',
     settings:    'cx50_settings',
+    documents:   'cx50_documents',
   };
 
   const DEFAULT_VEHICLE = {
@@ -51,8 +52,8 @@ const App = (() => {
     torque: '320',
     drivetrain: 'AWD',
     transmission: '6-Speed Automatic',
-    tiresDriver: '26"',
-    tiresPassenger: '16"',
+    wiperDriver: '26"',
+    wiperPassenger: '16"',
     oilSpec: '0W-20 Full Synthetic',
     oilCapacity: '4.8 qt',
     tirePressure: '35 PSI',
@@ -84,14 +85,22 @@ const App = (() => {
   function getMaintenance() { return store.get(KEYS.maintenance) || []; }
   function getMods()        { return store.get(KEYS.mods)        || DEFAULT_MODS; }
   function getFuel()        { return store.get(KEYS.fuel)        || []; }
-  function getVehicle()     { return { ...DEFAULT_VEHICLE, ...(store.get(KEYS.vehicle) || {}) }; }
+  function getVehicle() {
+    const saved = store.get(KEYS.vehicle) || {};
+    // Migrate legacy property names (tiresDriver/tiresPassenger → wiperDriver/wiperPassenger)
+    if (saved.tiresDriver && !saved.wiperDriver) { saved.wiperDriver = saved.tiresDriver; delete saved.tiresDriver; }
+    if (saved.tiresPassenger && !saved.wiperPassenger) { saved.wiperPassenger = saved.tiresPassenger; delete saved.tiresPassenger; }
+    return { ...DEFAULT_VEHICLE, ...saved };
+  }
   function getSettings()    { return store.get(KEYS.settings)    || {}; }
+  function getDocuments()   { return store.get(KEYS.documents)   || {}; }
 
   function saveMaintenance(data) { store.set(KEYS.maintenance, data); }
   function saveMods(data)        { store.set(KEYS.mods, data); }
   function saveFuel(data)        { store.set(KEYS.fuel, data); }
   function saveVehicle(data)     { store.set(KEYS.vehicle, data); }
   function saveSettings(data)    { store.set(KEYS.settings, data); }
+  function saveDocuments(data)   { store.set(KEYS.documents, data); }
 
   // ── Theme ────────────────────────────────────────────────────
   function initTheme() {
@@ -128,7 +137,7 @@ const App = (() => {
       mods:        { data: getMods(),        filename: 'cx50-mods-tracker.json' },
       fuel:        { data: getFuel(),        filename: 'cx50-fuel-log.json'     },
       all: {
-        data: { maintenance: getMaintenance(), mods: getMods(), fuel: getFuel(), vehicle: getVehicle(), exportedAt: new Date().toISOString() },
+        data: { maintenance: getMaintenance(), mods: getMods(), fuel: getFuel(), vehicle: getVehicle(), documents: getDocuments(), exportedAt: new Date().toISOString() },
         filename: 'cx50-garage-backup.json',
       },
     };
@@ -168,6 +177,7 @@ const App = (() => {
           if (parsed.mods)        saveMods(parsed.mods);
           if (parsed.fuel)        saveFuel(parsed.fuel);
           if (parsed.vehicle)     saveVehicle(parsed.vehicle);
+          if (parsed.documents)   saveDocuments(parsed.documents);
           toast('Backup restored ✓');
           navigate('dashboard');
         });
@@ -192,6 +202,7 @@ const App = (() => {
       case 'mods':        container.innerHTML = Views.mods();        break;
       case 'fuel':        container.innerHTML = Views.fuel();        break;
       case 'reference':   container.innerHTML = Views.reference();   break;
+      case 'documents':   container.innerHTML = Views.documents();   break;
     }
     container.scrollTop = 0;
     // Run each view's post-render setup
@@ -295,6 +306,7 @@ const App = (() => {
     getFuel, saveFuel,
     getVehicle, saveVehicle,
     getSettings, saveSettings,
+    getDocuments, saveDocuments,
     toggleTheme,
   };
 })();

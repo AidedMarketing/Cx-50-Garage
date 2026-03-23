@@ -11,6 +11,7 @@ const ASSETS = [
   '/Cx-50-Garage/src/views/maintenance.js',
   '/Cx-50-Garage/src/views/mods.js',
   '/Cx-50-Garage/src/views/fuel.js',
+  '/Cx-50-Garage/src/views/documents.js',
   '/Cx-50-Garage/src/views/reference.js',
   '/Cx-50-Garage/icons/icon-192.png',
   '/Cx-50-Garage/icons/icon-512.png',

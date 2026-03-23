@@ -18,7 +18,7 @@ Views.reference = function () {
         width:100%; padding:10px 14px 10px 38px; border:1px solid var(--border);
         border-radius: var(--radius-md); background: var(--bg-card); font-size:14px;
         color: var(--text-primary); font-family: var(--font-ui);
-      " placeholder="Search guide…" oninput="filterReference(this.value)" id="ref-search">
+      " placeholder="Search guide…" oninput="filterReference(this.value)" id="ref-search" aria-label="Search owner's guide">
     </div>
 
     <div id="ref-content" style="padding: 0 16px 16px;">
@@ -100,6 +100,251 @@ function buildReferenceHTML(filter, openFirst) {
       }
     },
     {
+      id: 'warning-lights',
+      title: '🚨 Warning Lights Guide',
+      content: () => {
+        if (!ReferenceData.warningLights) return null;
+        const items = ReferenceData.warningLights.filter(w =>
+          !q || w.light.toLowerCase().includes(q) || w.meaning.toLowerCase().includes(q) || w.severity.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(w => {
+          const badge = w.severity === 'Critical' ? 'badge-red' : w.severity === 'Warning' ? 'badge-amber' : 'badge-gray';
+          return `
+          <div class="ref-tip" style="padding:10px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <strong>${w.icon} ${w.light}</strong>
+              <span class="badge ${badge}" style="flex-shrink:0;">${w.severity}</span>
+            </div>
+            <div style="font-size:12px; line-height:1.5;">${w.meaning}</div>
+          </div>`;
+        }).join('');
+      }
+    },
+    {
+      id: 'emergency',
+      title: '🆘 Emergency & Roadside',
+      content: () => {
+        if (!ReferenceData.emergencyInfo) return null;
+        const items = ReferenceData.emergencyInfo.filter(e =>
+          !q || e.title.toLowerCase().includes(q) || e.info.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(e => `
+          <div class="ref-tip">
+            <strong>${e.title}</strong><br>${e.info}
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'key-fob',
+      title: '🔑 Key Fob Guide',
+      content: () => {
+        if (!ReferenceData.keyFobGuide) return null;
+        const items = ReferenceData.keyFobGuide.filter(k =>
+          !q || k.title.toLowerCase().includes(q) || k.tip.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(k => `
+          <div class="ref-tip">
+            <strong>${k.title}</strong><br>${k.tip}
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'how-to',
+      title: '🛠️ How-To Quick Fixes',
+      content: () => {
+        if (!ReferenceData.howTo) return null;
+        const items = ReferenceData.howTo.filter(h =>
+          !q || h.title.toLowerCase().includes(q) || h.steps.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(h => `
+          <div class="ref-tip">
+            <strong>${h.title}</strong><br>${h.steps}
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'fluids',
+      title: '🧪 Fluid Specs & Capacities',
+      content: () => {
+        if (!ReferenceData.fluidSpecs) return null;
+        const items = ReferenceData.fluidSpecs.filter(f =>
+          !q || f.label.toLowerCase().includes(q) || f.value.toLowerCase().includes(q) || f.capacity.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(f => `
+          <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:10px 0;">
+            <span style="font-size:13px; font-weight:500; color:var(--text-primary);">${f.label}</span>
+            <span style="font-size:12px; color:var(--text-secondary);">${f.value}</span>
+            <span style="font-size:11px; color:var(--text-tertiary);">Capacity: ${f.capacity}</span>
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'torque',
+      title: '🔩 DIY Torque Specs',
+      content: () => {
+        if (!ReferenceData.torqueSpecs) return null;
+        const items = ReferenceData.torqueSpecs.filter(t =>
+          !q || t.part.toLowerCase().includes(q) || t.spec.toLowerCase().includes(q) || t.note.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(t => `
+          <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:2px; padding:10px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+              <span style="font-size:13px; font-weight:500; color:var(--text-primary);">${t.part}</span>
+              <span style="font-size:13px; font-weight:600; color:var(--text-primary); flex-shrink:0;">${t.spec}</span>
+            </div>
+            <span style="font-size:11px; color:var(--text-tertiary);">${t.note}</span>
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'warranty',
+      title: '🛡️ Warranty Coverage',
+      content: () => {
+        if (!ReferenceData.warranty) return null;
+        const items = ReferenceData.warranty.filter(w =>
+          !q || w.coverage.toLowerCase().includes(q) || w.duration.toLowerCase().includes(q) || w.notes.toLowerCase().includes(q));
+        if (!items.length) return null;
+        return items.map(w => `
+          <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:4px; padding:12px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+              <span style="font-size:13px; font-weight:500; color:var(--text-primary);">${w.coverage}</span>
+              <span class="badge badge-blue" style="flex-shrink:0; font-size:9px;">${w.duration}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text-tertiary);">${w.notes}</div>
+          </div>`).join('');
+      }
+    },
+    {
+      id: 'checklists',
+      title: '✅ Seasonal Checklists',
+      content: () => {
+        if (!ReferenceData.checklists) return null;
+        const lists = Object.values(ReferenceData.checklists);
+        const filtered = lists.map(cl => {
+          const matchItems = cl.items.filter(item => !q || item.toLowerCase().includes(q) || cl.title.toLowerCase().includes(q));
+          return matchItems.length ? { ...cl, items: matchItems } : null;
+        }).filter(Boolean);
+        if (!filtered.length) return null;
+        return filtered.map(cl => `
+          <div style="padding:8px 0;">
+            <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">${cl.title}</div>
+            ${cl.items.map(item => `
+              <div style="display:flex; gap:8px; padding:4px 0; font-size:12px; color:var(--text-secondary); line-height:1.4;">
+                <span style="color:var(--text-tertiary); flex-shrink:0;">☐</span>
+                <span>${item}</span>
+              </div>`).join('')}
+          </div>`).join('<div style="border-top:1px solid var(--border-light); margin:4px 0;"></div>');
+      }
+    },
+    {
+      id: 'break-in',
+      title: '🏁 Break-In Period',
+      content: () => {
+        if (!ReferenceData.breakInPeriod) return null;
+        const bp = ReferenceData.breakInPeriod;
+        const match = !q || 'break-in break in period'.includes(q) ||
+          bp.distance.toLowerCase().includes(q) ||
+          bp.recommendations.some(r => r.toLowerCase().includes(q)) ||
+          bp.additionalNotes.toLowerCase().includes(q);
+        if (!match) return null;
+        return `
+          <div class="ref-tip">
+            <strong>Distance: ${bp.distance}</strong><br>
+            ${bp.recommendations.map(r => `<div style="display:flex; gap:8px; padding:3px 0; font-size:12px; color:var(--text-secondary); line-height:1.4;"><span style="flex-shrink:0;">•</span><span>${r}</span></div>`).join('')}
+            <div style="font-size:12px; color:var(--text-tertiary); margin-top:8px; font-style:italic;">${bp.additionalNotes}</div>
+          </div>`;
+      }
+    },
+    {
+      id: 'tire-specs',
+      title: '🛞 Tire Specs & Rotation',
+      content: () => {
+        if (!ReferenceData.tireSpecs) return null;
+        const ts = ReferenceData.tireSpecs;
+        const searchStr = JSON.stringify(ts).toLowerCase();
+        if (q && !searchStr.includes(q) && !'tire tires rotation tread wheel'.includes(q)) return null;
+        return `
+          <div class="ref-tip">
+            <strong>Meridian Edition (OEM)</strong><br>
+            <div class="ref-item"><span class="ref-item-label">Wheel</span><span class="ref-item-value">${ts.meridianEdition.wheelSize}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Tire Size</span><span class="ref-item-value">${ts.meridianEdition.tireSize}</span></div>
+            <div class="ref-item"><span class="ref-item-label">OE Tire</span><span class="ref-item-value">${ts.meridianEdition.oeTire}</span></div>
+            <div style="font-size:11px; color:var(--text-tertiary); padding:4px 0;">${ts.meridianEdition.oeFeatures}</div>
+          </div>
+          <div class="ref-tip">
+            <strong>Other Turbo Trims</strong><br>
+            <div class="ref-item"><span class="ref-item-label">Wheel</span><span class="ref-item-value">${ts.otherTurboTrims.wheelSize}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Tire Size</span><span class="ref-item-value">${ts.otherTurboTrims.tireSize}</span></div>
+          </div>
+          <div class="ref-tip">
+            <strong>Spare</strong>: ${ts.spareTire}
+          </div>
+          <div class="ref-tip">
+            <strong>Rotation Pattern (AWD)</strong><br>
+            <div style="font-size:12px; color:var(--text-secondary); padding:2px 0;"><strong>Non-directional:</strong> ${ts.rotationPattern.nonDirectional}</div>
+            <div style="font-size:12px; color:var(--text-secondary); padding:2px 0;"><strong>Directional:</strong> ${ts.rotationPattern.directional}</div>
+            <div style="font-size:12px; color:var(--text-secondary); padding:2px 0;"><strong>Interval:</strong> ${ts.rotationPattern.interval}</div>
+          </div>
+          <div class="ref-tip">
+            <strong>Tread Depth</strong><br>
+            <div class="ref-item"><span class="ref-item-label">New</span><span class="ref-item-value">${ts.treadDepth.newTire}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Legal Min</span><span class="ref-item-value">${ts.treadDepth.legalMinimum}</span></div>
+            <div class="ref-item"><span class="ref-item-label">Recommended</span><span class="ref-item-value">${ts.treadDepth.recommended}</span></div>
+          </div>
+          <div class="ref-tip">
+            <strong>Pressure:</strong> ${ts.pressure}
+          </div>
+          <div class="ref-tip">
+            <strong>Replacement Options (225/60R18)</strong><br>
+            ${ts.replacementOptions.map(t => `<div style="font-size:12px; color:var(--text-secondary); padding:2px 0;">• ${t}</div>`).join('')}
+          </div>`;
+      }
+    },
+    {
+      id: 'obd-port',
+      title: '🔌 OBD-II Port',
+      content: () => {
+        if (!ReferenceData.obdPort) return null;
+        const o = ReferenceData.obdPort;
+        const searchStr = (o.location + o.howToFind + o.notes + o.protocol).toLowerCase();
+        if (q && !searchStr.includes(q) && !'obd obd2 obd-ii diagnostic port scanner'.includes(q)) return null;
+        return `
+          <div class="ref-tip">
+            <strong>Location</strong><br>${o.location}
+          </div>
+          <div class="ref-tip">
+            <strong>How to Find</strong><br>${o.howToFind}
+          </div>
+          <div class="ref-tip">
+            <strong>Protocol:</strong> ${o.protocol}
+          </div>
+          <div style="font-size:11px; color:var(--text-tertiary); padding:4px 0; font-style:italic;">${o.notes}</div>`;
+      }
+    },
+    {
+      id: 'connected-services',
+      title: '📱 Mazda Connected Services',
+      content: () => {
+        if (!ReferenceData.connectedServices) return null;
+        const cs = ReferenceData.connectedServices;
+        const searchStr = JSON.stringify(cs).toLowerCase();
+        if (q && !searchStr.includes(q) && !'connected services app mymazda remote subscription'.includes(q)) return null;
+        return `
+          <div class="ref-item"><span class="ref-item-label">App</span><span class="ref-item-value">${cs.appName}</span></div>
+          <div class="ref-item"><span class="ref-item-label">Platforms</span><span class="ref-item-value">${cs.appPlatforms}</span></div>
+          <div class="ref-item"><span class="ref-item-label">Free Trial</span><span class="ref-item-value">${cs.trialPeriod}</span></div>
+          <div class="ref-item"><span class="ref-item-label">After Trial</span><span class="ref-item-value">${cs.subscriptionCost}</span></div>
+          <div class="ref-tip" style="margin-top:8px;">
+            <strong>Features</strong><br>
+            ${cs.features.map(f => `<div style="font-size:12px; color:var(--text-secondary); padding:2px 0;">• ${f}</div>`).join('')}
+          </div>
+          <div class="ref-tip">
+            <strong>Limitations</strong><br>
+            ${cs.limitations.map(l => `<div style="font-size:12px; color:var(--text-tertiary); padding:2px 0;">• ${l}</div>`).join('')}
+          </div>`;
+      }
+    },
+    {
       id: 'tuning',
       title: '⚡ Platform & Tuning Status',
       content: () => {
@@ -133,7 +378,7 @@ function buildReferenceHTML(filter, openFirst) {
     if (firstOpen && body) firstOpen = false;
     return `
       <div class="ref-section ${shouldOpen ? 'open' : ''}" id="ref-${s.id}" style="margin-top: 8px;">
-        <div class="ref-section-header" onclick="toggleRefSection('ref-${s.id}')">
+        <div class="ref-section-header" onclick="toggleRefSection('ref-${s.id}')" role="button" tabindex="0" aria-expanded="${shouldOpen ? 'true' : 'false'}" aria-controls="ref-${s.id}-body">
           <h3>${s.title}</h3>
           <svg class="ref-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -145,7 +390,11 @@ function buildReferenceHTML(filter, openFirst) {
 }
 
 function toggleRefSection(id) {
-  document.getElementById(id)?.classList.toggle('open');
+  const section = document.getElementById(id);
+  if (!section) return;
+  section.classList.toggle('open');
+  const header = section.querySelector('.ref-section-header');
+  if (header) header.setAttribute('aria-expanded', section.classList.contains('open'));
 }
 
 window._postRenderHooks = window._postRenderHooks || {};
@@ -156,7 +405,7 @@ window._postRenderHooks['reference'] = function () {
   const cached = sessionStorage.getItem('cx50_recalls_html');
   if (cached) { el.innerHTML = cached; return; }
 
-  fetch('https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023')
+  fetch('https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023', { signal: AbortSignal.timeout(8000) })
     .then(r => r.json())
     .then(data => {
       const recalls = data.results || [];

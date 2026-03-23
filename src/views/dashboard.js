@@ -113,7 +113,7 @@ Views.dashboard = function () {
     <div style="padding-top: 52px;">
 
       <!-- Hero Card (tap to edit vehicle info) -->
-      <div class="hero-card" onclick="openVehicleEdit()" style="cursor:pointer;">
+      <div class="hero-card" onclick="openVehicleEdit()" role="button" tabindex="0" aria-label="Edit vehicle info" style="cursor:pointer;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
             <div class="hero-model">${v.year} ${v.make} ${v.model}</div>
@@ -143,19 +143,19 @@ Views.dashboard = function () {
       <!-- Stats Grid -->
       <div style="padding: 0 16px;">
         <div class="stat-grid">
-          <div class="stat-card" onclick="App.navigate('maintenance')" style="cursor:pointer;">
+          <div class="stat-card" onclick="App.navigate('maintenance')" role="button" tabindex="0" style="cursor:pointer;">
             <div class="stat-value">${maintenance.length}</div>
             <div class="stat-label">Service entries</div>
           </div>
-          <div class="stat-card" onclick="App.navigate('maintenance')" style="cursor:pointer;">
+          <div class="stat-card" onclick="App.navigate('maintenance')" role="button" tabindex="0" style="cursor:pointer;">
             <div class="stat-value">${App.formatCurrency(totalServiceCost)}</div>
             <div class="stat-label">Total service cost</div>
           </div>
-          <div class="stat-card" onclick="App.navigate('mods')" style="cursor:pointer;">
+          <div class="stat-card" onclick="App.navigate('mods')" role="button" tabindex="0" style="cursor:pointer;">
             <div class="stat-value">${App.formatCurrency(modsActualSpend)}</div>
             <div class="stat-label">Mods spend · ${modsInstalled}/${mods.length} installed</div>
           </div>
-          <div class="stat-card" onclick="App.navigate('fuel')" style="cursor:pointer;">
+          <div class="stat-card" onclick="App.navigate('fuel')" role="button" tabindex="0" style="cursor:pointer;">
             <div class="stat-value">${costPerMile ? '$' + costPerMile : '—'}</div>
             <div class="stat-label">Cost / mile · ${fuel.length} fill-ups</div>
           </div>
@@ -468,11 +468,11 @@ function openVehicleEdit() {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Wiper — Driver</label>
-          <input type="text" class="form-input" id="v-wiperd" value="${v.tiresDriver}">
+          <input type="text" class="form-input" id="v-wiperd" value="${v.wiperDriver}">
         </div>
         <div class="form-group">
           <label class="form-label">Wiper — Passenger</label>
-          <input type="text" class="form-input" id="v-wiperp" value="${v.tiresPassenger}">
+          <input type="text" class="form-input" id="v-wiperp" value="${v.wiperPassenger}">
         </div>
       </div>
       <button class="btn-primary" onclick="saveVehicleInfo()">Save Changes</button>
@@ -495,8 +495,8 @@ function saveVehicleInfo() {
     oilCapacity:  document.getElementById('v-oilcap').value.trim(),
     tirePressure: document.getElementById('v-tirepsi').value.trim(),
     fuelType:     document.getElementById('v-fuel').value.trim(),
-    tiresDriver:  document.getElementById('v-wiperd').value.trim(),
-    tiresPassenger: document.getElementById('v-wiperp').value.trim(),
+    wiperDriver:  document.getElementById('v-wiperd').value.trim(),
+    wiperPassenger: document.getElementById('v-wiperp').value.trim(),
   });
   App.closeModal();
   App.toast('Vehicle info saved');
