@@ -1,0 +1,33 @@
+name: Bump SW cache version
+
+# Runs on every push to main EXCEPT when sw.js itself is the only change,
+# preventing an infinite loop from the commit this workflow makes.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'sw.js'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inject deploy timestamp into CACHE_NAME
+        run: |
+          TS=$(date -u +%Y%m%d%H%M%S)
+          sed -i "s|const CACHE_NAME = 'cx50-garage-v[^']*'|const CACHE_NAME = 'cx50-garage-v${TS}'|" sw.js
+          echo "Bumped to cx50-garage-v${TS}"
+
+      - name: Commit updated sw.js
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --quiet sw.js || (
+            git add sw.js &&
+            git commit -m "chore: bump SW cache version [skip ci]" &&
+            git push
+          )
