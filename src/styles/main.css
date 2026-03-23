@@ -760,3 +760,73 @@ input, textarea, select { font-family: inherit; }
 .text-muted  { color: var(--text-tertiary); font-size: 12px; }
 .mt-4 { margin-top: 16px; }
 .mb-0 { margin-bottom: 0; }
+
+/* ─── View Toggle Buttons ────────────────────────────────────── */
+#maint-view-toggles button {
+  transition: background 0.15s, color 0.15s;
+}
+#maint-view-toggles button.view-toggle-active {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* ─── Dark Mode ──────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:            #0C0C0C;
+  --bg-card:       #1A1A1A;
+  --bg-subtle:     #141414;
+  --border:        #2C2C2C;
+  --border-light:  #222222;
+  --text-primary:  #F0EFED;
+  --text-secondary:#9A9691;
+  --text-tertiary: #5A5855;
+  --accent-light:  #2C1917;
+  --green-light:   #0E1E17;
+  --amber-light:   #1E1408;
+  --blue-light:    #0D1523;
+}
+
+[data-theme="dark"] #bottom-nav {
+  background: rgba(12, 12, 12, 0.95);
+}
+
+/* Hero card: keep dark so white text stays readable */
+[data-theme="dark"] .hero-card {
+  background: #242424;
+}
+
+/* FAB + primary button: use a light surface so they stand out on dark bg */
+[data-theme="dark"] .fab {
+  background: #2E2E2E;
+}
+
+[data-theme="dark"] .btn-primary {
+  background: #E8E6E2;
+  color: #111;
+}
+
+/* Active filter pill */
+[data-theme="dark"] .filter-pill.active {
+  background: #E8E6E2;
+  border-color: #E8E6E2;
+  color: #111;
+}
+
+/* Theme toggle button */
+#theme-toggle {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: 14px;
+  z-index: 150;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}

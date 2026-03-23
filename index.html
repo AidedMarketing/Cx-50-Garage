@@ -21,6 +21,13 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="src/styles/main.css" />
+  <!-- Apply theme before paint to avoid flash -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('cx50_theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
 
@@ -31,6 +38,7 @@
   </div>
 
   <div id="app">
+    <button id="theme-toggle" onclick="App.toggleTheme()" aria-label="Toggle dark mode"></button>
     <div id="view-container"></div>
 
     <nav id="bottom-nav">

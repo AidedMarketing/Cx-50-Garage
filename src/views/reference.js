@@ -90,6 +90,16 @@ function buildReferenceHTML(filter, openFirst) {
       }
     },
     {
+      id: 'recalls',
+      title: '⚠️ Recall Status',
+      content: () => {
+        if (q && !['recall','nhtsa','safety'].some(w => w.includes(q))) return null;
+        return `<div id="recall-content" style="padding:4px 0; min-height:32px;">
+          <span style="font-size:13px; color:var(--text-tertiary);">Loading NHTSA data…</span>
+        </div>`;
+      }
+    },
+    {
       id: 'tuning',
       title: '⚡ Platform & Tuning Status',
       content: () => {
@@ -137,6 +147,38 @@ function buildReferenceHTML(filter, openFirst) {
 function toggleRefSection(id) {
   document.getElementById(id)?.classList.toggle('open');
 }
+
+window._postRenderHooks = window._postRenderHooks || {};
+window._postRenderHooks['reference'] = function () {
+  const el = document.getElementById('recall-content');
+  if (!el) return;
+
+  const cached = sessionStorage.getItem('cx50_recalls_html');
+  if (cached) { el.innerHTML = cached; return; }
+
+  fetch('https://api.nhtsa.gov/recalls/recallsByVehicle?make=Mazda&model=CX-50&modelYear=2023')
+    .then(r => r.json())
+    .then(data => {
+      const recalls = data.results || [];
+      const html = recalls.length === 0
+        ? `<div style="font-size:13px; color:var(--green); padding:6px 0;">No active recalls found for 2023 CX-50.</div>`
+        : recalls.map(r => `
+          <div class="ref-item" style="flex-direction:column; align-items:flex-start; gap:4px; padding:10px 0;">
+            <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+              <span style="font-size:13px; font-weight:500; color:var(--text-primary);">${r.Component || '—'}</span>
+              <span class="badge badge-red" style="flex-shrink:0;">Recall</span>
+            </div>
+            ${r.Summary ? `<div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">${r.Summary}</div>` : ''}
+            ${r.Remedy ? `<div style="font-size:11px; color:var(--text-tertiary);"><strong>Remedy:</strong> ${r.Remedy}</div>` : ''}
+            <div style="font-size:11px; color:var(--text-tertiary);">Campaign: ${r.NHTSACampaignNumber || '—'}</div>
+          </div>`).join('<div style="border-top:1px solid var(--border-light);"></div>');
+      sessionStorage.setItem('cx50_recalls_html', html);
+      el.innerHTML = html;
+    })
+    .catch(() => {
+      el.innerHTML = `<div style="font-size:13px; color:var(--text-tertiary);">Could not load recall data. Check your connection.</div>`;
+    });
+};
 
 function filterReference(val) {
   const container = document.getElementById('ref-content');

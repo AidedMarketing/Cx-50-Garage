@@ -54,7 +54,10 @@ Views.fuel = function () {
       </div>
     </div>` : ''}
 
-    <div style="padding: ${entries.length > 0 ? '12px' : '0'} 16px 8px;">
+    ${buildMpgChart(sorted)}
+    ${buildPpgChart(sorted)}
+
+    <div style="padding: ${entries.length > 0 ? '8px' : '0'} 16px 8px;">
       ${entries.length === 0 ? `
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 22V6a2 2 0 012-2h8a2 2 0 012 2v16"/><path d="M17 14h1a2 2 0 012 2v2a1 1 0 001 1 1 1 0 001-1V9l-3-3"/><path d="M3 22h14"/><rect x="6" y="8" width="5" height="4" rx="1"/></svg>
@@ -69,6 +72,103 @@ Views.fuel = function () {
     </button>
   </div>`;
 };
+
+function buildMpgChart(sorted) {
+  const mpgData = [];
+  for (let i = 1; i < sorted.length; i++) {
+    const miles   = Number(sorted[i].odometer) - Number(sorted[i-1].odometer);
+    const gallons = Number(sorted[i].gallons);
+    if (miles > 0 && gallons > 0) mpgData.push(miles / gallons);
+  }
+  if (mpgData.length < 3) return '';
+
+  const W = 300, H = 72;
+  const PAD = { top: 10, bottom: 14, left: 26, right: 8 };
+  const iW = W - PAD.left - PAD.right;
+  const iH = H - PAD.top - PAD.bottom;
+  const minV = Math.min(...mpgData), maxV = Math.max(...mpgData);
+  const range = maxV - minV || 1;
+  const xOf = i => PAD.left + (i / (mpgData.length - 1)) * iW;
+  const yOf = v => PAD.top + iH - ((v - minV) / range) * iH;
+  const pts = mpgData.map((v, i) => `${xOf(i)},${yOf(v)}`).join(' ');
+  const area = `${PAD.left},${PAD.top + iH} ${pts} ${xOf(mpgData.length - 1)},${PAD.top + iH}`;
+  const last = mpgData[mpgData.length - 1].toFixed(1);
+  const avg  = (mpgData.reduce((s, v) => s + v, 0) / mpgData.length).toFixed(1);
+
+  return `
+  <div style="padding: 0 16px 4px;">
+    <div class="card" style="padding: 14px 14px 10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; font-weight:500; color:var(--text-secondary);">MPG Trend</span>
+        <span style="font-size:11px; color:var(--text-tertiary);">Last: <strong style="color:var(--text-primary);">${last}</strong> &nbsp;Avg: <strong style="color:var(--text-primary);">${avg}</strong></span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:${H}px; display:block; overflow:visible;">
+        <defs>
+          <linearGradient id="mpg-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${[0, 0.5, 1].map(t => {
+          const y = PAD.top + t * iH;
+          const label = (maxV - t * range).toFixed(0);
+          return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border-light)" stroke-width="1"/>
+                  <text x="${PAD.left - 3}" y="${y + 3.5}" text-anchor="end" font-size="7.5" fill="var(--text-tertiary)" font-family="var(--font-ui)">${label}</text>`;
+        }).join('')}
+        <polygon points="${area}" fill="url(#mpg-fill)"/>
+        <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${mpgData.map((v, i) => `<circle cx="${xOf(i)}" cy="${yOf(v)}" r="2.5" fill="var(--accent)"/>`).join('')}
+      </svg>
+    </div>
+  </div>`;
+}
+
+function buildPpgChart(sorted) {
+  const ppgData = sorted
+    .filter(e => e.pricePerGallon && Number(e.pricePerGallon) > 0)
+    .map(e => Number(e.pricePerGallon));
+  if (ppgData.length < 3) return '';
+
+  const W = 300, H = 72;
+  const PAD = { top: 10, bottom: 14, left: 32, right: 8 };
+  const iW = W - PAD.left - PAD.right;
+  const iH = H - PAD.top - PAD.bottom;
+  const minV = Math.min(...ppgData), maxV = Math.max(...ppgData);
+  const range = maxV - minV || 0.1;
+  const xOf = i => PAD.left + (i / (ppgData.length - 1)) * iW;
+  const yOf = v => PAD.top + iH - ((v - minV) / range) * iH;
+  const pts  = ppgData.map((v, i) => `${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
+  const area = `${PAD.left},${PAD.top + iH} ${pts} ${xOf(ppgData.length - 1).toFixed(1)},${PAD.top + iH}`;
+  const last = ppgData[ppgData.length - 1].toFixed(3);
+  const avg  = (ppgData.reduce((s, v) => s + v, 0) / ppgData.length).toFixed(3);
+
+  return `
+  <div style="padding: 0 16px 4px;">
+    <div class="card" style="padding: 14px 14px 10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; font-weight:500; color:var(--text-secondary);">Price / Gallon Trend</span>
+        <span style="font-size:11px; color:var(--text-tertiary);">Last: <strong style="color:var(--text-primary);">$${last}</strong> &nbsp;Avg: <strong style="color:var(--text-primary);">$${avg}</strong></span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:${H}px; display:block; overflow:visible;">
+        <defs>
+          <linearGradient id="ppg-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--amber)" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="var(--amber)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${[0, 0.5, 1].map(t => {
+          const y = PAD.top + t * iH;
+          const label = '$' + (maxV - t * range).toFixed(2);
+          return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border-light)" stroke-width="1"/>
+                  <text x="${PAD.left - 3}" y="${y + 3.5}" text-anchor="end" font-size="7.5" fill="var(--text-tertiary)" font-family="var(--font-ui)">${label}</text>`;
+        }).join('')}
+        <polygon points="${area}" fill="url(#ppg-fill)"/>
+        <polyline points="${pts}" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${ppgData.map((v, i) => `<circle cx="${xOf(i).toFixed(1)}" cy="${yOf(v).toFixed(1)}" r="2.5" fill="var(--amber)"/>`).join('')}
+      </svg>
+    </div>
+  </div>`;
+}
 
 function fuelItem(e, allSorted) {
   const idx = allSorted.findIndex(x => x.id === e.id);
