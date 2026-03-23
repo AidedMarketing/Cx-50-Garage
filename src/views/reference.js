@@ -93,7 +93,7 @@ function buildReferenceHTML(filter, openFirst) {
       id: 'recalls',
       title: '⚠️ Recall Status',
       content: () => {
-        if (q && !['recall','nhtsa','safety'].some(w => w.includes(q))) return null;
+        if (q && !['recall','nhtsa','safety','campaign'].some(kw => kw.includes(q) || q.includes(kw))) return null;
         return `<div id="recall-content" style="padding:4px 0; min-height:32px;">
           <span style="font-size:13px; color:var(--text-tertiary);">Loading NHTSA data…</span>
         </div>`;

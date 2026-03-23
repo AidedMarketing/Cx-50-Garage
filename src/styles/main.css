@@ -770,16 +770,51 @@ input, textarea, select { font-family: inherit; }
   color: var(--accent);
 }
 
+/* ─── Theme Toggle ───────────────────────────────────────────── */
+#theme-toggle {
+  position: fixed;
+  /* 44px tap target; visually 32px circle with transparent padding */
+  top: calc(6px + env(safe-area-inset-top, 0px));
+  right: 10px;
+  z-index: 150;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition: color 0.2s;
+}
+/* Inner visible circle */
+#theme-toggle::before {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.2s, border-color 0.2s;
+}
+#theme-toggle svg { position: relative; z-index: 1; }
+
 /* ─── Dark Mode ──────────────────────────────────────────────── */
 [data-theme="dark"] {
   --bg:            #0C0C0C;
-  --bg-card:       #1A1A1A;
-  --bg-subtle:     #141414;
-  --border:        #2C2C2C;
-  --border-light:  #222222;
-  --text-primary:  #F0EFED;
-  --text-secondary:#9A9691;
+  --bg-card:       #1C1C1C;
+  --bg-subtle:     #161616;
+  --border:        #2E2E2E;
+  --border-light:  #252525;
+  --text-primary:  #EEECEA;
+  --text-secondary:#999590;
   --text-tertiary: #5A5855;
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:     0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:     0 8px 32px rgba(0,0,0,0.6);
   --accent-light:  #2C1917;
   --green-light:   #0E1E17;
   --amber-light:   #1E1408;
@@ -787,46 +822,80 @@ input, textarea, select { font-family: inherit; }
 }
 
 [data-theme="dark"] #bottom-nav {
-  background: rgba(12, 12, 12, 0.95);
+  background: rgba(12, 12, 12, 0.96);
+  border-top-color: #252525;
 }
 
-/* Hero card: keep dark so white text stays readable */
+/* Hero: keep black so white text stays readable */
 [data-theme="dark"] .hero-card {
-  background: #242424;
+  background: #1E1E1E;
 }
 
-/* FAB + primary button: use a light surface so they stand out on dark bg */
+/* FAB: slightly elevated surface */
 [data-theme="dark"] .fab {
-  background: #2E2E2E;
+  background: #303030;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
 
+/* Buttons */
 [data-theme="dark"] .btn-primary {
-  background: #E8E6E2;
+  background: #E6E4E0;
   color: #111;
 }
 
 /* Active filter pill */
 [data-theme="dark"] .filter-pill.active {
-  background: #E8E6E2;
-  border-color: #E8E6E2;
+  background: #E6E4E0;
+  border-color: #E6E4E0;
   color: #111;
 }
 
-/* Theme toggle button */
-#theme-toggle {
-  position: fixed;
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  right: 14px;
-  z-index: 150;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Form inputs: slightly lighter than modal bg so they read as inputs */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-textarea {
+  background: #111;
+  border-color: #333;
+  color: var(--text-primary);
+}
+
+/* Modal overlay: darker scrim on dark backgrounds */
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* badge-gray: needs more contrast against dark cards */
+[data-theme="dark"] .badge-gray {
+  background: #2A2A2A;
   color: var(--text-secondary);
-  box-shadow: var(--shadow-sm);
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+/* page-header sticky bar */
+[data-theme="dark"] .page-header {
+  background: var(--bg);
+  border-bottom-color: var(--border-light);
+}
+
+/* Stat cards get a subtle top highlight for elevation in dark mode */
+[data-theme="dark"] .stat-card {
+  border-color: #2E2E2E;
+  background: #1C1C1C;
+}
+
+/* List items */
+[data-theme="dark"] .list-item {
+  background: #1C1C1C;
+  border-color: #2A2A2A;
+}
+
+/* Cards */
+[data-theme="dark"] .card {
+  background: #1C1C1C;
+  border-color: #2A2A2A;
+}
+
+/* Ref sections */
+[data-theme="dark"] .ref-section {
+  background: #1C1C1C;
+  border-color: #2A2A2A;
 }

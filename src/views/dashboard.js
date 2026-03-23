@@ -163,14 +163,14 @@ Views.dashboard = function () {
       </div>
 
       <!-- Monthly Spend Chart + Budget -->
-      <div style="margin-top: 16px;">
+      <div style="margin-top: 14px; display:flex; flex-direction:column; gap:8px;">
         ${buildSpendChart(maintenance, fuel, mods)}
         ${buildBudgetSection(fuel, maintenance)}
       </div>
 
       <!-- Top Priority Mod -->
       ${topMod ? `
-      <div style="padding: 0 16px; margin-top: 20px;">
+      <div style="padding: 0 16px; margin-top: 24px;">
         <div class="card-label" style="padding: 0 4px;">Next up — Mods</div>
         <div class="card" style="margin-top: 8px; cursor: pointer;" onclick="App.navigate('mods')">
           <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
@@ -186,7 +186,7 @@ Views.dashboard = function () {
 
       <!-- Recent Service -->
       ${maintenance.length > 0 ? `
-      <div style="padding: 0 16px; margin-top: 20px; margin-bottom: 8px;">
+      <div style="padding: 0 16px; margin-top: 24px; margin-bottom: 8px;">
         <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 4px; margin-bottom: 8px;">
           <div class="card-label" style="margin-bottom:0;">Recent Service</div>
           <button onclick="App.navigate('maintenance')" style="font-size:12px; color: var(--text-tertiary); font-family: var(--font-ui);">View all →</button>
@@ -268,7 +268,7 @@ function buildSpendChart(maintenance, fuel, mods) {
   const fmtY = v => v >= 1000 ? `$${(v/1000).toFixed(1)}k` : `$${v.toFixed(0)}`;
   const gridLines = [0, 0.5, 1].map(t => {
     const y = PAD.top + t * iH;
-    return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border-light)" stroke-width="1"/>
+    return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border)" stroke-width="0.75" stroke-dasharray="3,3"/>
             <text x="${PAD.left - 3}" y="${y + 3.5}" text-anchor="end" font-size="7" fill="var(--text-tertiary)" font-family="var(--font-ui)">${fmtY(maxTotal * (1 - t))}</text>`;
   }).join('');
 
@@ -300,10 +300,16 @@ function buildBudgetSection(fuel, maintenance) {
   if (!s.monthlyFuelBudget && !s.monthlyServiceBudget) {
     return `
     <div style="padding: 0 16px 4px;">
-      <div class="card" style="padding: 12px 14px; display:flex; align-items:center; justify-content:space-between;">
-        <span style="font-size:13px; color:var(--text-tertiary);">Track monthly spend vs. budget</span>
-        <button onclick="openBudgetEdit()" style="font-size:12px; color:var(--accent); font-weight:500; font-family:var(--font-ui); flex-shrink:0;">Set up →</button>
-      </div>
+      <button onclick="openBudgetEdit()" class="card" style="
+        width:100%; padding: 13px 16px; display:flex; align-items:center; justify-content:space-between;
+        text-align:left; cursor:pointer;
+      ">
+        <div>
+          <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:2px;">Set a monthly budget</div>
+          <div style="font-size:11px; color:var(--text-tertiary);">Track fuel & service spend vs. target</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" style="width:16px;height:16px;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>`;
   }
 

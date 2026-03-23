@@ -112,7 +112,7 @@ function buildMpgChart(sorted) {
         ${[0, 0.5, 1].map(t => {
           const y = PAD.top + t * iH;
           const label = (maxV - t * range).toFixed(0);
-          return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border-light)" stroke-width="1"/>
+          return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border)" stroke-width="0.75" stroke-dasharray="3,3"/>
                   <text x="${PAD.left - 3}" y="${y + 3.5}" text-anchor="end" font-size="7.5" fill="var(--text-tertiary)" font-family="var(--font-ui)">${label}</text>`;
         }).join('')}
         <polygon points="${area}" fill="url(#mpg-fill)"/>
@@ -159,7 +159,7 @@ function buildPpgChart(sorted) {
         ${[0, 0.5, 1].map(t => {
           const y = PAD.top + t * iH;
           const label = '$' + (maxV - t * range).toFixed(2);
-          return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border-light)" stroke-width="1"/>
+          return `<line x1="${PAD.left}" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="var(--border)" stroke-width="0.75" stroke-dasharray="3,3"/>
                   <text x="${PAD.left - 3}" y="${y + 3.5}" text-anchor="end" font-size="7.5" fill="var(--text-tertiary)" font-family="var(--font-ui)">${label}</text>`;
         }).join('')}
         <polygon points="${area}" fill="url(#ppg-fill)"/>
