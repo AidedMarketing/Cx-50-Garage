@@ -92,8 +92,15 @@ Views.dashboard = function () {
     upcomingAlert = `<div class="alert-banner alert-amber">${clockIcon}<span><strong>Due:</strong> ${alertEntry.type} — ${App.formatDate(alertEntry.nextDueDate)}${alertEntry.nextMileage ? ` · ${App.formatMileage(alertEntry.nextMileage)}` : ''}</span></div>`;
   }
 
-  // Top priority mod
-  const topMod = mods.find(m => m.priority === 'high' && m.status !== 'installed' && m.status !== 'skipped');
+  // Top priority mod — find first unfinished mod from lowest tier
+  const topMod = [...mods]
+    .filter(m => m.status !== 'installed' && m.status !== 'skipped')
+    .sort((a, b) => {
+      const ta = a.tier || 99, tb = b.tier || 99;
+      if (ta !== tb) return ta - tb;
+      const po = { high: 0, medium: 1, low: 2 };
+      return (po[a.priority] ?? 9) - (po[b.priority] ?? 9);
+    })[0] || null;
 
   // Avg MPG
   let avgMpg = '—';
@@ -177,7 +184,7 @@ Views.dashboard = function () {
       <!-- Top Priority Mod -->
       ${topMod ? `
       <div style="padding: 0 16px; margin-top: 24px;">
-        <div class="card-label" style="padding: 0 4px;">Next up — Mods</div>
+        <div class="card-label" style="padding: 0 4px;">Next up — Mods${topMod.tier ? ` · Tier ${topMod.tier}` : ''}</div>
         <div class="card" style="margin-top: 8px; cursor: pointer;" onclick="App.navigate('mods')">
           <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
             <div style="flex:1; min-width:0;">

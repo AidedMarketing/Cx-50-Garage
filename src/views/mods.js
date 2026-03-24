@@ -2,6 +2,13 @@
 
 window.Views = window.Views || {};
 
+const TIER_META = {
+  1: { label: 'Tier 1 — Do First',        desc: 'Protection essentials for Miami daily driving', color: 'var(--accent)' },
+  2: { label: 'Tier 2 — Do Next',          desc: 'Sound, performance & extended protection',      color: 'var(--amber)'  },
+  3: { label: 'Tier 3 — Quality of Life',   desc: 'Comfort, tech & cosmetic upgrades',             color: 'var(--blue, #3B82F6)'   },
+  4: { label: 'Tier 4 — Future / Optional', desc: 'Deep performance & maintenance upgrades',       color: 'var(--text-tertiary)'   },
+};
+
 Views.mods = function () {
   const mods = App.getMods();
   const installed = mods.filter(m => m.status === 'installed').length;
@@ -12,7 +19,7 @@ Views.mods = function () {
     .filter(m => m.status === 'installed')
     .reduce((s, m) => s + (Number(m.actualCost) || 0), 0);
 
-  // Register post-render hook for filter pills (replaces global postRender)
+  // Register post-render hook for filter pills
   window._postRenderHooks['mods'] = function () {
     document.getElementById('mods-filter-bar')?.addEventListener('click', e => {
       const pill = e.target.closest('.filter-pill');
@@ -61,6 +68,12 @@ Views.mods = function () {
   </div>`;
 };
 
+function tierBadge(tier) {
+  const t = TIER_META[tier];
+  if (!t) return '';
+  return `<span class="badge" style="background:${t.color}15; color:${t.color}; border:1px solid ${t.color}30; font-size:9px; padding:2px 6px;">T${tier}</span>`;
+}
+
 function modCostDisplay(m) {
   if (m.status === 'installed' && m.actualCost != null) {
     const variance = m.estimatedCost != null ? m.estimatedCost - m.actualCost : null;
@@ -74,31 +87,83 @@ function modCostDisplay(m) {
 
 function renderModsList(mods, filter) {
   const filtered = filter === 'all' ? mods : mods.filter(m => m.status === filter);
-  const priorityOrder = { high: 0, medium: 1, low: 2 };
-  const sorted = [...filtered].sort((a, b) => {
-    const pd = (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
-    return pd !== 0 ? pd : a.name.localeCompare(b.name);
-  });
 
-  if (sorted.length === 0) return `
+  if (filtered.length === 0) return `
     <div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       <p>No mods in this category.</p>
     </div>`;
 
-  return sorted.map(m => `
+  // Group by tier, then sort within each tier by priority then name
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  const tiers = [1, 2, 3, 4];
+  const ungrouped = []; // mods without a tier
+
+  let html = '';
+
+  for (const tier of tiers) {
+    const tierMods = filtered.filter(m => m.tier === tier);
+    if (tierMods.length === 0) continue;
+
+    tierMods.sort((a, b) => {
+      const pd = (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+      return pd !== 0 ? pd : a.name.localeCompare(b.name);
+    });
+
+    const meta = TIER_META[tier];
+    const tierCost = tierMods
+      .filter(m => m.status !== 'installed' && m.status !== 'skipped')
+      .reduce((s, m) => s + (Number(m.estimatedCost) || 0), 0);
+    const tierInstalled = tierMods.filter(m => m.status === 'installed').length;
+    const tierTotal = tierMods.length;
+
+    html += `
+      <div style="margin-top:${tier === 1 ? '4' : '20'}px; margin-bottom:10px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+          <div style="display:flex; align-items:baseline; gap:8px;">
+            <span style="font-size:13px; font-weight:600; color:${meta.color};">${meta.label}</span>
+            <span style="font-size:11px; color:var(--text-tertiary);">${tierInstalled}/${tierTotal} done</span>
+          </div>
+          <span style="font-size:11px; color:var(--text-tertiary);">${tierCost > 0 ? App.formatCurrency(tierCost) + ' remaining' : ''}</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">${meta.desc}</div>
+      </div>`;
+
+    html += tierMods.map(m => renderModItem(m)).join('');
+  }
+
+  // Mods without a tier (user-added)
+  const noTier = filtered.filter(m => !m.tier || !tiers.includes(m.tier));
+  if (noTier.length > 0) {
+    noTier.sort((a, b) => {
+      const pd = (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+      return pd !== 0 ? pd : a.name.localeCompare(b.name);
+    });
+    if (html) {
+      html += `<div style="margin-top:20px; margin-bottom:10px;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-secondary);">Custom Mods</span>
+      </div>`;
+    }
+    html += noTier.map(m => renderModItem(m)).join('');
+  }
+
+  return html;
+}
+
+function renderModItem(m) {
+  return `
     <div class="list-item" onclick="openModDetail('${m.id}')">
       <div class="list-item-content">
         <div class="list-item-title">${m.name}</div>
         <div class="list-item-meta" style="margin-top: 3px;">${m.category}${m.brand ? ' · ' + m.brand : ''}</div>
-        ${m.notes ? `<div class="list-item-meta" style="margin-top: 4px; font-size: 11px; color: var(--text-tertiary); line-height: 1.4;">${m.notes.length > 90 ? m.notes.slice(0,90) + '…' : m.notes}</div>` : ''}
+        ${m.notes ? `<div class="list-item-meta" style="margin-top: 4px; font-size: 11px; color: var(--text-tertiary); line-height: 1.4;">${m.notes.length > 90 ? m.notes.slice(0,90) + '...' : m.notes}</div>` : ''}
       </div>
       <div class="list-item-right">
         ${App.statusBadge(m.status)}
-        ${App.priorityBadge(m.priority)}
+        ${m.tier ? tierBadge(m.tier) : App.priorityBadge(m.priority)}
         ${modCostDisplay(m)}
       </div>
-    </div>`).join('');
+    </div>`;
 }
 
 function openModDetail(id) {
@@ -140,11 +205,23 @@ function openModForm(existing) {
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Category</label>
-        <select class="form-select" id="mod-category">
-          ${CATEGORIES.map(c => `<option value="${c}" ${m.category === c ? 'selected' : ''}>${c}</option>`).join('')}
-        </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="mod-category">
+            ${CATEGORIES.map(c => `<option value="${c}" ${m.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority Tier</label>
+          <select class="form-select" id="mod-tier">
+            <option value="" ${!m.tier ? 'selected' : ''}>None</option>
+            <option value="1" ${m.tier === 1 ? 'selected' : ''}>T1 — Do First</option>
+            <option value="2" ${m.tier === 2 ? 'selected' : ''}>T2 — Do Next</option>
+            <option value="3" ${m.tier === 3 ? 'selected' : ''}>T3 — Quality of Life</option>
+            <option value="4" ${m.tier === 4 ? 'selected' : ''}>T4 — Future</option>
+          </select>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -176,7 +253,7 @@ function openModForm(existing) {
       </div>
       <div class="form-group">
         <label class="form-label">Notes</label>
-        <textarea class="form-textarea" id="mod-notes" placeholder="Research notes, install tips, observations…">${m.notes || ''}</textarea>
+        <textarea class="form-textarea" id="mod-notes" placeholder="Research notes, install tips, observations...">${m.notes || ''}</textarea>
       </div>
       <button class="btn-primary" onclick="saveModEntry('${m.id || ''}')">
         ${m.id ? 'Save Changes' : 'Add Mod'}
@@ -188,11 +265,13 @@ function openModForm(existing) {
 
 function saveModEntry(existingId) {
   const all = App.getMods();
+  const tierVal = document.getElementById('mod-tier').value;
   const entry = {
     id:            existingId || App.uid(),
     name:          document.getElementById('mod-name').value.trim(),
     status:        document.getElementById('mod-status').value,
     priority:      document.getElementById('mod-priority').value,
+    tier:          tierVal ? Number(tierVal) : null,
     category:      document.getElementById('mod-category').value,
     estimatedCost: document.getElementById('mod-est-cost').value !== '' ? Number(document.getElementById('mod-est-cost').value) : null,
     actualCost:    document.getElementById('mod-actual-cost').value !== '' ? Number(document.getElementById('mod-actual-cost').value) : null,
@@ -213,7 +292,7 @@ function saveModEntry(existingId) {
 
   App.saveMods(all);
   App.closeModal();
-  App.toast(existingId ? 'Mod updated ✓' : 'Mod added ✓');
+  App.toast(existingId ? 'Mod updated' : 'Mod added');
   App.navigate('mods');
 }
 
