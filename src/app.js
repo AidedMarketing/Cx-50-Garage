@@ -179,9 +179,25 @@ const App = (() => {
       : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
   }
 
-  // Seed mods on first run
+  // Seed mods on first run, and merge any new defaults into existing data
+  const MODS_SCHEMA_VERSION = 2; // bump when DEFAULT_MODS list changes
   function seedIfNeeded() {
-    if (!store.get(KEYS.mods)) store.set(KEYS.mods, DEFAULT_MODS);
+    const existing = store.get(KEYS.mods);
+    if (!existing) {
+      store.set(KEYS.mods, DEFAULT_MODS);
+      store.set('cx50_mods_schema', MODS_SCHEMA_VERSION);
+      return;
+    }
+    // Merge new default mods that the user doesn't already have (matched by name)
+    const savedVersion = store.get('cx50_mods_schema') || 0;
+    if (savedVersion < MODS_SCHEMA_VERSION) {
+      const existingNames = new Set(existing.map(m => m.name.toLowerCase()));
+      const newDefaults = DEFAULT_MODS.filter(d => !existingNames.has(d.name.toLowerCase()));
+      if (newDefaults.length > 0) {
+        store.set(KEYS.mods, existing.concat(newDefaults));
+      }
+      store.set('cx50_mods_schema', MODS_SCHEMA_VERSION);
+    }
   }
 
   // ── Export ───────────────────────────────────────────────────
